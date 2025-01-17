@@ -1,46 +1,52 @@
+import { useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
+import Animated, { interpolate, runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import { useEffect } from 'react';
+
+const HEADER_HEIGHT = 74;
+const FAST_VELOCITY_Y = 1000;
 
 const MusicPlayer = () => {
     const dimensions = useWindowDimensions();
-    const fullScreenY = useSharedValue<number>(0);
+    const offsetY = useSharedValue<number>(0);
+
+    const expandedOffsetY = useMemo(() => -dimensions.height + HEADER_HEIGHT * 1.5, []);
+
     const style = useAnimatedStyle(() => ({
-        // bottom: withTiming(`${offsetY.value}%`, { duration: 500 }),
+        opacity: interpolate(offsetY.value, [0, expandedOffsetY], [1, 0]),
         transform: [
-            { translateY: fullScreenY.value },
+            { translateY: offsetY.value },
         ],
     }), []);
 
-    useEffect(() => {
-        console.log(fullScreenY.value >= dimensions.height * .8)
-    }, [fullScreenY.value]);
+    const fold = useCallback(() => {
+        offsetY.value = withTiming(0);
+    }, []);
 
-    const miniToFullscreenGesture = Gesture.Pan()
-        .onChange((event) => {
-            // const delta = event.changeY + offsetY.value;
-            const delta = event.changeY + fullScreenY.value;
-            fullScreenY.value = delta < 0 ? delta : 0;
+    const expand = useCallback(() => {
+        offsetY.value = withTiming(expandedOffsetY);
+    }, []);
+
+    const gesture = Gesture.Pan()
+        .onChange(event => {
+            const delta = event.changeY + offsetY.value;
+            offsetY.value = delta > 0 ? 0 : delta;
         })
-        .onEnd((event) => {
-            const isFast = Math.abs(event.velocityY) >= 1000;
-
-            if (!isFast) {
-
-                const isOver = Math.abs(fullScreenY.value) >= dimensions.height * 0.5;
-                if (isOver) {
-
-                }
-
+        .onEnd(event => {
+            const isFast = Math.abs(event.velocityY) >= FAST_VELOCITY_Y;
+            if (isFast) {
+                const shouldExpand = event.velocityY >= FAST_VELOCITY_Y;
+                runOnJS(shouldExpand ? fold : expand)();
                 return;
             }
+
+            const isOver = Math.abs(offsetY.value - HEADER_HEIGHT) > dimensions.height * 0.5;
+            runOnJS(isOver ? expand : fold)();
         });
 
     return (
-        // Mini
-        <GestureDetector gesture={miniToFullscreenGesture}>
-            <Animated.View style={[style, styles.container]}>
+        <GestureDetector gesture={gesture}>
+            <Animated.View style={[style, styles.headerContainer]}>
                 <View style={styles.album} />
                 <View style={styles.titleWithArtistContainer}>
                     <Text style={styles.title}>それを愛と呼ぶなら</Text>
@@ -52,24 +58,24 @@ const MusicPlayer = () => {
             </Animated.View>
         </GestureDetector>
 
-        // TODO: Fullscreen here
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
+    headerContainer: {
         flex: 1,
         flexDirection: 'row',
+        alignItems: 'center',
         columnGap: 12,
         position: 'absolute',
         width: '100%',
+        height: HEADER_HEIGHT,
         paddingHorizontal: 8,
-        paddingVertical: 10,
         bottom: 0,
     },
     album: {
-        width: 42,
-        height: 42,
+        width: 40,
+        height: 40,
         backgroundColor: 'green',
     },
     titleWithArtistContainer: {
@@ -79,11 +85,12 @@ const styles = StyleSheet.create({
     },
     title: {
         fontSize: 14,
-        fontWeight: 'bold',
+        fontWeight: '700',
         color: 'black'
     },
     artist: {
         fontSize: 12,
+        fontWeight: '400',
         color: 'grey'
     },
     controllerContainer: {
