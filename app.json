@@ -2,6 +2,9 @@
   "expo": {
     "name": "music-player",
     "slug": "music-player",
-    "version": "1.0.0"
+    "version": "1.0.0",
+    "ios": {
+      "appleTeamId": "48G87KSMK3"
+    }
   }
 }
