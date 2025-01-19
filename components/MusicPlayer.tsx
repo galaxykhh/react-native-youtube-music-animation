@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
-import Animated, { interpolate, runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import Animated, { interpolate, interpolateColor, runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
 const HEADER_HEIGHT = 74;
@@ -8,19 +8,35 @@ const FAST_VELOCITY_Y = 1000;
 
 const MusicPlayer = () => {
     const dimensions = useWindowDimensions();
-    const offsetY = useSharedValue<number>(0);
+    const expandedOffsetY = useMemo(() => 0, []);
+    const foldedOffsetY = useMemo(() => dimensions.height - HEADER_HEIGHT, []);
+    const offsetY = useSharedValue<number>(foldedOffsetY);
 
-    const expandedOffsetY = useMemo(() => -dimensions.height + HEADER_HEIGHT * 1.5, []);
 
-    const style = useAnimatedStyle(() => ({
-        opacity: interpolate(offsetY.value, [0, expandedOffsetY], [1, 0]),
+    const playerStyle = useAnimatedStyle(() => ({
         transform: [
             { translateY: offsetY.value },
         ],
     }), []);
 
+    const headerStyle = useAnimatedStyle(() => ({
+        opacity: interpolate(
+            offsetY.value,
+            [foldedOffsetY, expandedOffsetY],
+            [1, 0]
+        ),
+    }), []);
+
+    const bodyStyle = useAnimatedStyle(() => ({
+        backgroundColor: interpolateColor(
+            offsetY.value,
+            [foldedOffsetY, expandedOffsetY],
+            ['#fff', 'blue']
+        )
+    }), []);
+
     const fold = useCallback(() => {
-        offsetY.value = withTiming(0);
+        offsetY.value = withTiming(foldedOffsetY);
     }, []);
 
     const expand = useCallback(() => {
@@ -30,48 +46,62 @@ const MusicPlayer = () => {
     const gesture = Gesture.Pan()
         .onChange(event => {
             const delta = event.changeY + offsetY.value;
-            offsetY.value = delta > 0 ? 0 : delta;
+            offsetY.value = delta > foldedOffsetY ? foldedOffsetY : delta;
         })
         .onEnd(event => {
             const isFast = Math.abs(event.velocityY) >= FAST_VELOCITY_Y;
             if (isFast) {
-                const shouldExpand = event.velocityY >= FAST_VELOCITY_Y;
-                runOnJS(shouldExpand ? fold : expand)();
+                const shouldExpand = event.velocityY < FAST_VELOCITY_Y;
+                runOnJS(shouldExpand ? expand : fold)();
                 return;
             }
 
-            const isOver = Math.abs(offsetY.value - HEADER_HEIGHT) > dimensions.height * 0.5;
-            runOnJS(isOver ? expand : fold)();
+            const isOver = Math.abs(offsetY.value) > dimensions.height * 0.5;
+            console.log(isOver, offsetY.value - HEADER_HEIGHT, dimensions.height * 0.5);
+            runOnJS(isOver ? fold : expand)();
         });
 
     return (
         <GestureDetector gesture={gesture}>
-            <Animated.View style={[style, styles.headerContainer]}>
-                <View style={styles.album} />
-                <View style={styles.titleWithArtistContainer}>
-                    <Text style={styles.title}>それを愛と呼ぶなら</Text>
-                    <Text style={styles.artist}>Uru</Text>
-                </View>
-                <View style={styles.controllerContainer}>
-                    <Text>Play</Text>
-                </View>
+            <Animated.View style={[playerStyle, styles.container]}>
+                {/** TODO: Body */}
+                <Animated.View style={[bodyStyle, styles.bodyContainer]}>
+                    <Text>BODY</Text>
+                </Animated.View>
+
+                {/** Header */}
+                <Animated.View style={[headerStyle, styles.headerContainer]}>
+                    <View style={styles.album} />
+                    <View style={styles.titleWithArtistContainer}>
+                        <Text style={styles.title}>それを愛と呼ぶなら</Text>
+                        <Text style={styles.artist}>Uru</Text>
+                    </View>
+                    <View style={styles.controllerContainer}>
+                        <Text>Play</Text>
+                    </View>
+                </Animated.View>
             </Animated.View>
         </GestureDetector>
-
     );
 }
 
 const styles = StyleSheet.create({
-    headerContainer: {
+    container: {
         flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        columnGap: 12,
         position: 'absolute',
         width: '100%',
+        height: '100%',
+        bottom: 0,
+    },
+    headerContainer: {
+        position: 'absolute',
+        flexDirection: 'row',
+        alignItems: 'center',
+        width: '100%',
+        columnGap: 12,
         height: HEADER_HEIGHT,
         paddingHorizontal: 8,
-        bottom: 0,
+        backgroundColor: 'blue',
     },
     album: {
         width: 40,
@@ -97,6 +127,10 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         columnGap: 12,
+    },
+    bodyContainer: {
+        flex: 1,
+        paddingTop: HEADER_HEIGHT,
     },
 });
 
