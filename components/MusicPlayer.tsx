@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react';
-import { StyleSheet, useWindowDimensions, View, Text } from 'react-native';
-import Animated, { interpolate, interpolateColor, runOnJS, useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
+import { StyleSheet, useWindowDimensions, Text } from 'react-native';
+import Animated, { Extrapolation, interpolate, interpolateColor, runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Header from './Header';
 import { headerStyles } from '../styles/headerStyles';
@@ -21,49 +21,69 @@ const MusicPlayer = ({
     /** sizes */
     const dimensions = useWindowDimensions();
     const foldedOffsetY = useMemo(() => dimensions.height - HEADER_HEIGHT, []);
-    const offsetY = useSharedValue<number>(foldedOffsetY);
     const bodyAlbumSize = useMemo(() => dimensions.width * 0.8, []);
     const bodyAlbumPaddingHorizontal = useMemo(() => (dimensions.width - bodyAlbumSize - headerStyles.container.paddingHorizontal * 2) / 2, []);
-
+    const offsetY = useSharedValue<number>(foldedOffsetY);
 
     const playerAnimation = useAnimatedStyle(() => ({
-        transform: [
-            {
-                translateY: withSpring(offsetY.value, {
-                    damping: 20,
-                    mass: 0.2,
-                })
-            },
-        ],
+        transform: [{ translateY: offsetY.value }],
     }), []);
 
     const headerAnimation = useAnimatedStyle(() => ({
+        backgroundColor: interpolateColor(
+            offsetY.value,
+            [foldedOffsetY, 0],
+            [headerColor, bodyColor]
+        ),
         opacity: interpolate(
             offsetY.value,
             [foldedOffsetY, 0],
-            [1, 0],
-            'clamp',
+            [1, 0]
         ),
     }), []);
 
+    const bodyHeaderAnimation = useAnimatedStyle(() => ({
+        backgroundColor: interpolateColor(
+            offsetY.value,
+            [foldedOffsetY, 0],
+            ['#ffffff00', bodyColor]
+        ),
+    }), []);
+
+    const bodyContentAnimation = useAnimatedStyle(() => ({
+        opacity: interpolate(
+            offsetY.value,
+            [foldedOffsetY, 0],
+            [0, 1]
+        ),
+        transform: [
+            {
+                translateY: interpolate(
+                    offsetY.value,
+                    [foldedOffsetY, 0],
+                    [-bodyAlbumSize, 0]
+                )
+            }
+        ]
+    }), []);
+
     const bodyAlbumAnimation = useAnimatedStyle(() => {
-        const paddingTop = headerStyles.container.height + (bodyAlbumSize - headerStyles.container.height) / 2;
+        const size = interpolate(
+            offsetY.value,
+            [foldedOffsetY, 0],
+            [headerStyles.album.width, bodyAlbumSize],
+            Extrapolation.CLAMP,
+        );
+        // 헤더 높이 + 대형 앨범사이즈에서 헤더높이를 제외한 한쪽부분
+        const translateY = headerStyles.container.height + (bodyAlbumSize - headerStyles.container.height) / 2;
 
         return {
-            width: interpolate(
-                offsetY.value,
-                [foldedOffsetY, 0],
-                [headerStyles.album.width, bodyAlbumSize]
-            ),
-            height: interpolate(
-                offsetY.value,
-                [foldedOffsetY, 0],
-                [headerStyles.album.height, bodyAlbumSize]
-            ),
+            width: size,
+            height: size,
             borderRadius: interpolate(
                 offsetY.value,
                 [foldedOffsetY, 0],
-                [headerStyles.album.borderRadius, 20]
+                [headerStyles.album.borderRadius, 20],
             ),
             transform: [
                 {
@@ -71,13 +91,15 @@ const MusicPlayer = ({
                         offsetY.value,
                         [foldedOffsetY, 0],
                         [0, bodyAlbumPaddingHorizontal],
+                        Extrapolation.CLAMP,
                     )
                 },
                 {
                     translateY: interpolate(
                         offsetY.value,
                         [foldedOffsetY, 0],
-                        [0, paddingTop],
+                        [0, translateY],
+                        Extrapolation.CLAMP,
                     )
                 },
             ],
@@ -90,7 +112,7 @@ const MusicPlayer = ({
             offsetY.value,
             [foldedOffsetY, 0],
             [headerColor, bodyColor]
-        )
+        ),
     }), [headerColor, bodyColor]);
 
     const minimize = useCallback(() => {
@@ -119,33 +141,44 @@ const MusicPlayer = ({
         });
 
     return (
-        <GestureDetector gesture={gesture}>
-            <Animated.View style={[playerAnimation, styles.container]}>
+        <>
+            <GestureDetector gesture={gesture}>
+                <Animated.View style={
+                    [
+                        playerAnimation,
+                        {
+                            ...styles.container,
+                        }
+                    ]
+                }>
+                    {/** Body Header */}
+                    <Animated.View style={[bodyHeaderAnimation, { ...headerStyles.container, position: 'static', zIndex: 100 }]}>
+                        <Animated.View style={[bodyAlbumAnimation, headerStyles.album]}></Animated.View>
+                    </Animated.View>
 
-                {/** Body Header */}
-                <View style={{ ...headerStyles.container, position: 'static', zIndex: 100 }}>
-                    <Animated.View style={[bodyAlbumAnimation, headerStyles.album]}></Animated.View>
-                </View>
-                {/** Body */}
-                <Animated.View style={[
-                    bodyAnimation,
-                    {
-                        ...bodyStyles.container,
-                        backgroundColor: bodyColor,
-                        paddingTop: bodyAlbumSize + 20,
-                        paddingHorizontal: bodyAlbumPaddingHorizontal,
-                    }
-                ]}>
-                    <Text style={{ fontSize: 20 }}>Title</Text>
-                    <Text style={{ fontSize: 14 }}>Artist</Text>
+                    {/** Body */}
+                    <Animated.View style={[
+                        bodyAnimation,
+                        {
+                            ...bodyStyles.container,
+                            backgroundColor: bodyColor,
+                            paddingTop: bodyAlbumSize + 20,
+                            paddingHorizontal: bodyAlbumPaddingHorizontal,
+                        }
+                    ]}>
+                        <Animated.View style={bodyContentAnimation}>
+                            <Text style={{ fontSize: 20 }}>Title</Text>
+                            <Text style={{ fontSize: 14 }}>Artist</Text>
+                        </Animated.View>
+                    </Animated.View>
+                    {/** Header */}
+                    <Header
+                        animation={headerAnimation}
+                        backgroundColor={headerColor}
+                    />
                 </Animated.View>
-                {/** Header */}
-                <Header
-                    animation={headerAnimation}
-                    backgroundColor={headerColor}
-                />
-            </Animated.View>
-        </GestureDetector>
+            </GestureDetector>
+        </>
     );
 }
 

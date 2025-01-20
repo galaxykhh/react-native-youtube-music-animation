@@ -16,7 +16,7 @@ const Header = (props: HeaderProps) => {
                 backgroundColor: props.backgroundColor,
             }
         ]}>
-            <Animated.View style={styles.album} />
+            <View style={styles.album} />
             <View style={styles.titleWithArtistContainer}>
                 <Text style={styles.title}>それを愛と呼ぶなら</Text>
                 <Text style={styles.artist}>Uru</Text>
