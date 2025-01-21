@@ -1,10 +1,11 @@
-import { View, Text } from 'react-native';
+import { SafeAreaView } from 'react-native';
+import MusicPlayer from '../components/MusicPlayer';
 
 const ProfileScreen = () => {
     return (
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-            <Text>Profile Screen</Text>
-        </View>
+        <SafeAreaView>
+            <MusicPlayer />
+        </SafeAreaView>
     );
 }
 

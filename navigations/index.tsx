@@ -17,7 +17,12 @@ export type ProfileScreenProps = BottomTabScreenProps<HomeTabParamList, 'Profile
 export const HomeTabNavigation = () => {
     return (
         <>
-            <HomeTab.Navigator screenOptions={{ headerShown: false }}>
+            <HomeTab.Navigator
+                screenOptions={{
+                    headerShown: false,
+                    animation: 'shift',
+                }}
+            >
                 <HomeTab.Screen
                     name='MusicList'
                     component={MusicListScreen}
@@ -27,6 +32,7 @@ export const HomeTabNavigation = () => {
                     component={ProfileScreen}
                 />
             </HomeTab.Navigator>
+
         </>
     );
 };
