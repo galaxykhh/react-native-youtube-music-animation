@@ -3,6 +3,8 @@ import Animated, { AnimatedStyle } from 'react-native-reanimated';
 import { headerStyles as styles } from '../styles/headerStyles';
 
 type HeaderProps = {
+    title: string;
+    artist: string;
     animation: AnimatedStyle,
     backgroundColor: string;
 }
@@ -18,8 +20,8 @@ const Header = (props: HeaderProps) => {
         ]}>
             <View style={styles.album} />
             <View style={styles.titleWithArtistContainer}>
-                <Text style={styles.title}>それを愛と呼ぶなら</Text>
-                <Text style={styles.artist}>Uru</Text>
+                <Text style={styles.title}>{props.title}</Text>
+                <Text style={styles.artist}>{props.artist}</Text>
             </View>
             <View style={styles.controllerContainer}>
                 <Text>Play</Text>

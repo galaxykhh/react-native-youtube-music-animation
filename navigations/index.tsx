@@ -3,6 +3,7 @@ import MusicListScreen from '../screens/MusicList';
 import ProfileScreen from '../screens/Profile';
 import { createNativeStackNavigator, NativeStackNavigationProp, NativeStackScreenProps } from '@react-navigation/native-stack';
 import MusicDetailsScreen from '../screens/MusicDetails';
+import MusicPlayer from '../components/MusicPlayer';
 
 type HomeTabParamList = {
     MusicList: undefined;
@@ -32,7 +33,10 @@ export const HomeTabNavigation = () => {
                     component={ProfileScreen}
                 />
             </HomeTab.Navigator>
-
+            <MusicPlayer
+                title='それを愛と呼ぶなら'
+                artist='Uru'
+            />
         </>
     );
 };

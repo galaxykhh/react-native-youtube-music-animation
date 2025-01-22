@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import { StyleSheet, useWindowDimensions, Text } from 'react-native';
-import Animated, { Extrapolation, interpolate, interpolateColor, runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import Animated, { Easing, Extrapolation, interpolate, interpolateColor, runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Header from './Header';
 import { headerStyles } from '../styles/headerStyles';
@@ -9,11 +9,15 @@ const HEADER_HEIGHT = 74;
 const FAST_VELOCITY_Y = 1000;
 
 export type MusicPlayerProps = {
+    title: string;
+    artist: string;
     headerColor?: string;
     bodyColor?: string;
 };
 
 const MusicPlayer = ({
+    title,
+    artist,
     headerColor = '#ffffff',
     bodyColor = '#ffffff'
 }: MusicPlayerProps) => {
@@ -103,7 +107,6 @@ const MusicPlayer = ({
                     )
                 },
             ],
-
         }
     }, []);
 
@@ -116,11 +119,17 @@ const MusicPlayer = ({
     }), [headerColor, bodyColor]);
 
     const minimize = useCallback(() => {
-        offsetY.value = withTiming(foldedOffsetY);
+        offsetY.value = withTiming(foldedOffsetY, {
+            easing: Easing.bezier(0.25, 0.5, 0, 1),
+            duration: 500,
+        });
     }, []);
 
     const expand = useCallback(() => {
-        offsetY.value = withTiming(0);
+        offsetY.value = withTiming(0, {
+            easing: Easing.bezier(0.25, 0.5, 0, 1),
+            duration: 500,
+        });
     }, []);
 
     const gesture = Gesture.Pan()
@@ -167,12 +176,14 @@ const MusicPlayer = ({
                         }
                     ]}>
                         <Animated.View style={bodyContentAnimation}>
-                            <Text style={{ fontSize: 20 }}>Title</Text>
-                            <Text style={{ fontSize: 14 }}>Artist</Text>
+                            <Text style={bodyStyles.title}>{title}</Text>
+                            <Text style={bodyStyles.artist}>{artist}</Text>
                         </Animated.View>
                     </Animated.View>
                     {/** Header */}
                     <Header
+                        title={title}
+                        artist={artist}
                         animation={headerAnimation}
                         backgroundColor={headerColor}
                     />
@@ -186,6 +197,14 @@ const bodyStyles = StyleSheet.create({
     container: {
         flex: 1,
         alignItems: 'flex-start',
+    },
+    title: {
+        fontSize: 24,
+        fontWeight: 700,
+    },
+    artist: {
+        fontSize: 16,
+        fontWeight: 400,
     }
 });
 
