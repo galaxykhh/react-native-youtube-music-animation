@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react';
-import { StyleSheet, useWindowDimensions, Text } from 'react-native';
+import { StyleSheet, useWindowDimensions, Text, View } from 'react-native';
 import Animated, { Easing, Extrapolation, interpolate, interpolateColor, runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Header from './Header';
@@ -26,7 +26,7 @@ const MusicPlayer = ({
     const dimensions = useWindowDimensions();
     const foldedOffsetY = useMemo(() => dimensions.height - HEADER_HEIGHT, []);
     const bodyAlbumSize = useMemo(() => dimensions.width * 0.8, []);
-    const bodyAlbumPaddingHorizontal = useMemo(() => (dimensions.width - bodyAlbumSize - headerStyles.container.paddingHorizontal * 2) / 2, []);
+    const bodyAlbumPaddingHorizontal = useMemo(() => (dimensions.width - bodyAlbumSize) / 2, []);
     const offsetY = useSharedValue<number>(foldedOffsetY);
 
     const playerAnimation = useAnimatedStyle(() => ({
@@ -60,15 +60,6 @@ const MusicPlayer = ({
             [foldedOffsetY, 0],
             [0, 1]
         ),
-        transform: [
-            {
-                translateY: interpolate(
-                    offsetY.value,
-                    [foldedOffsetY, 0],
-                    [-bodyAlbumSize, 0]
-                )
-            }
-        ]
     }), []);
 
     const bodyAlbumAnimation = useAnimatedStyle(() => {
@@ -79,7 +70,6 @@ const MusicPlayer = ({
             Extrapolation.CLAMP,
         );
         // 헤더 높이 + 대형 앨범사이즈에서 헤더높이를 제외한 한쪽부분
-        const translateY = headerStyles.container.height + (bodyAlbumSize - headerStyles.container.height) / 2;
 
         return {
             width: size,
@@ -94,7 +84,7 @@ const MusicPlayer = ({
                     translateX: interpolate(
                         offsetY.value,
                         [foldedOffsetY, 0],
-                        [0, bodyAlbumPaddingHorizontal],
+                        [headerStyles.container.paddingHorizontal, bodyAlbumPaddingHorizontal],
                         Extrapolation.CLAMP,
                     )
                 },
@@ -102,7 +92,7 @@ const MusicPlayer = ({
                     translateY: interpolate(
                         offsetY.value,
                         [foldedOffsetY, 0],
-                        [0, translateY],
+                        [-(HEADER_HEIGHT - (HEADER_HEIGHT - headerStyles.album.height) / 2), 0],
                         Extrapolation.CLAMP,
                     )
                 },
@@ -161,9 +151,17 @@ const MusicPlayer = ({
                     ]
                 }>
                     {/** Body Header */}
-                    <Animated.View style={[bodyHeaderAnimation, { ...headerStyles.container, position: 'static', zIndex: 100 }]}>
-                        <Animated.View style={[bodyAlbumAnimation, headerStyles.album]}></Animated.View>
-                    </Animated.View>
+                    <Animated.View style={[bodyHeaderAnimation, { ...headerStyles.container, position: 'static' }]} />
+
+                    {/** Body Album */}
+                    <View style={{ backgroundColor: bodyColor, zIndex: 1, }}>
+                        <Animated.View style={[
+                            bodyAlbumAnimation,
+                            {
+                                ...headerStyles.album,
+                            }]}
+                        />
+                    </View>
 
                     {/** Body */}
                     <Animated.View style={[
@@ -171,7 +169,7 @@ const MusicPlayer = ({
                         {
                             ...bodyStyles.container,
                             backgroundColor: bodyColor,
-                            paddingTop: bodyAlbumSize + 20,
+                            paddingTop: 20,
                             paddingHorizontal: bodyAlbumPaddingHorizontal,
                         }
                     ]}>
