@@ -7,6 +7,7 @@ import { headerStyles } from '../styles/headerStyles';
 
 const HEADER_HEIGHT = 74;
 const FAST_VELOCITY_Y = 1000;
+const EASING_BEZIER = Easing.bezier(0.25, 0.5, 0, 1);
 
 export type MusicPlayerProps = {
     title: string;
@@ -110,14 +111,14 @@ const MusicPlayer = ({
 
     const minimize = useCallback(() => {
         offsetY.value = withTiming(foldedOffsetY, {
-            easing: Easing.bezier(0.25, 0.5, 0, 1),
+            easing: EASING_BEZIER,
             duration: 500,
         });
     }, []);
 
     const expand = useCallback(() => {
         offsetY.value = withTiming(0, {
-            easing: Easing.bezier(0.25, 0.5, 0, 1),
+            easing: EASING_BEZIER,
             duration: 500,
         });
     }, []);
