@@ -7,7 +7,7 @@ import { headerStyles } from '../styles/headerStyles';
 import { DefaultStyle } from 'react-native-reanimated/lib/typescript/hook/commonTypes';
 
 const HEADER_HEIGHT = 74;
-const TOOLBAR_HEIGHT = 74;
+const TOOLBAR_HEIGHT = 56;
 const FAST_VELOCITY_Y = 1000;
 const EASING_BEZIER = Easing.bezier(0.25, 0.5, 0, 1);
 
@@ -28,7 +28,7 @@ const MusicPlayer = ({
     /** sizes */
     const dimensions = useWindowDimensions();
     const foldedOffsetY = useMemo(() => dimensions.height - HEADER_HEIGHT, []);
-    const bodyAlbumSize = useMemo(() => dimensions.width * 0.8, []);
+    const bodyAlbumSize = useMemo(() => dimensions.width * 0.85, []);
     const bodyAlbumPaddingHorizontal = useMemo(() => (dimensions.width - bodyAlbumSize) / 2, []);
     const offsetY = useSharedValue<number>(foldedOffsetY);
 
@@ -65,6 +65,14 @@ const MusicPlayer = ({
         ),
     }), []);
 
+    const toolbarAnimation = useAnimatedStyle(() => ({
+        opacity: interpolate(
+            offsetY.value,
+            [foldedOffsetY, 0],
+            [0, 1],
+        ),
+    }), []);
+
     const bodyAlbumAnimation = useAnimatedStyle(() => {
         const size = interpolate(
             offsetY.value,
@@ -78,7 +86,7 @@ const MusicPlayer = ({
             width: size,
             height: size,
             opacity: offsetY.value === foldedOffsetY ? 0 : 1,
-
+            pointerEvents: offsetY.value === foldedOffsetY ? 'none' : 'auto',
             borderRadius: interpolate(
                 offsetY.value,
                 [foldedOffsetY, 0],
@@ -170,7 +178,13 @@ const MusicPlayer = ({
                     <View style={{ backgroundColor: bodyColor, zIndex: 1, }}>
 
                         {/** Body Toolbar */}
-                        <View style={bodyStyles.toolbar}></View>
+                        <Animated.View style={[toolbarAnimation, bodyStyles.toolbar]}>
+                            <Text onPress={minimize}>Close</Text>
+                            <View style={bodyStyles.toolbarActions}>
+                                <Text>Action1</Text>
+                                <Text>Action2</Text>
+                            </View>
+                        </Animated.View>
 
                         <Animated.View style={[
                             bodyAlbumAnimation,
@@ -199,6 +213,7 @@ const MusicPlayer = ({
 
                     {/** Header */}
                     <Header
+                        onPress={expand}
                         title={title}
                         artist={artist}
                         animation={headerAnimation}
@@ -224,9 +239,15 @@ const bodyStyles = StyleSheet.create({
         fontWeight: 400,
     },
     toolbar: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        padding: 12,
         height: TOOLBAR_HEIGHT,
-        backgroundColor: 'green',
-    }
+    },
+    toolbarActions: {
+        flexDirection: 'row',
+        gap: 8,
+    },
 });
 
 const styles = StyleSheet.create({
