@@ -4,8 +4,10 @@ import Animated, { Easing, Extrapolation, interpolate, interpolateColor, runOnJS
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Header from './Header';
 import { headerStyles } from '../styles/headerStyles';
+import { DefaultStyle } from 'react-native-reanimated/lib/typescript/hook/commonTypes';
 
 const HEADER_HEIGHT = 74;
+const TOOLBAR_HEIGHT = 74;
 const FAST_VELOCITY_Y = 1000;
 const EASING_BEZIER = Easing.bezier(0.25, 0.5, 0, 1);
 
@@ -75,6 +77,8 @@ const MusicPlayer = ({
         return {
             width: size,
             height: size,
+            opacity: offsetY.value === foldedOffsetY ? 0 : 1,
+
             borderRadius: interpolate(
                 offsetY.value,
                 [foldedOffsetY, 0],
@@ -93,12 +97,12 @@ const MusicPlayer = ({
                     translateY: interpolate(
                         offsetY.value,
                         [foldedOffsetY, 0],
-                        [-(HEADER_HEIGHT - (HEADER_HEIGHT - headerStyles.album.height) / 2), 0],
+                        [-(HEADER_HEIGHT + TOOLBAR_HEIGHT - (HEADER_HEIGHT - headerStyles.album.height) / 2), 0],
                         Extrapolation.CLAMP,
                     )
                 },
             ],
-        }
+        } as DefaultStyle
     }, []);
 
     const bodyAnimation = useAnimatedStyle(() => ({
@@ -152,14 +156,27 @@ const MusicPlayer = ({
                     ]
                 }>
                     {/** Body Header */}
-                    <Animated.View style={[bodyHeaderAnimation, { ...headerStyles.container, position: 'static' }]} />
+                    <Animated.View style={
+                        [
+                            bodyHeaderAnimation,
+                            {
+                                ...headerStyles.container,
+                                position: 'static'
+                            }
+                        ]
+                    } />
 
                     {/** Body Album */}
                     <View style={{ backgroundColor: bodyColor, zIndex: 1, }}>
+
+                        {/** Body Toolbar */}
+                        <View style={bodyStyles.toolbar}></View>
+
                         <Animated.View style={[
                             bodyAlbumAnimation,
                             {
                                 ...headerStyles.album,
+                                backgroundColor: 'red',
                             }]}
                         />
                     </View>
@@ -179,6 +196,7 @@ const MusicPlayer = ({
                             <Text style={bodyStyles.artist}>{artist}</Text>
                         </Animated.View>
                     </Animated.View>
+
                     {/** Header */}
                     <Header
                         title={title}
@@ -204,6 +222,10 @@ const bodyStyles = StyleSheet.create({
     artist: {
         fontSize: 16,
         fontWeight: 400,
+    },
+    toolbar: {
+        height: TOOLBAR_HEIGHT,
+        backgroundColor: 'green',
     }
 });
 
