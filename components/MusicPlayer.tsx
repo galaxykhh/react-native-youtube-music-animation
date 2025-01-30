@@ -4,23 +4,26 @@ import Animated, { Easing, Extrapolation, interpolate, interpolateColor, runOnJS
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Header from './Header';
 import { headerStyles } from '../styles/headerStyles';
-import { DefaultStyle } from 'react-native-reanimated/lib/typescript/hook/commonTypes';
 
 const HEADER_HEIGHT = 74;
 const TOOLBAR_HEIGHT = 56;
 const FAST_VELOCITY_Y = 1000;
 const EASING_BEZIER = Easing.bezier(0.25, 0.5, 0, 1);
 
-export type MusicPlayerProps = {
+export type Music = {
     title: string;
     artist: string;
+    cover: string;
+}
+
+export type MusicPlayerProps = {
+    music: Music
     headerColor?: string;
     bodyColor?: string;
 };
 
 const MusicPlayer = ({
-    title,
-    artist,
+    music,
     headerColor = '#ffffff',
     bodyColor = '#ffffff'
 }: MusicPlayerProps) => {
@@ -110,7 +113,7 @@ const MusicPlayer = ({
                     )
                 },
             ],
-        } as DefaultStyle
+        }
     }, []);
 
     const bodyAnimation = useAnimatedStyle(() => ({
@@ -186,12 +189,13 @@ const MusicPlayer = ({
                             </View>
                         </Animated.View>
 
-                        <Animated.View style={[
-                            bodyAlbumAnimation,
-                            {
-                                ...headerStyles.album,
-                                backgroundColor: 'red',
-                            }]}
+                        <Animated.Image
+                            source={{ uri: music.cover }}
+                            style={[
+                                bodyAlbumAnimation,
+                                {
+                                    ...headerStyles.album,
+                                }]}
                         />
                     </View>
 
@@ -206,16 +210,15 @@ const MusicPlayer = ({
                         }
                     ]}>
                         <Animated.View style={bodyContentAnimation}>
-                            <Text style={bodyStyles.title}>{title}</Text>
-                            <Text style={bodyStyles.artist}>{artist}</Text>
+                            <Text style={bodyStyles.title}>{music.title}</Text>
+                            <Text style={bodyStyles.artist}>{music.artist}</Text>
                         </Animated.View>
                     </Animated.View>
 
                     {/** Header */}
                     <Header
                         onPress={expand}
-                        title={title}
-                        artist={artist}
+                        music={music}
                         animation={headerAnimation}
                         backgroundColor={headerColor}
                     />

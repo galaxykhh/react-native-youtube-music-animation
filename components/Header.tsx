@@ -1,11 +1,11 @@
-import { View, Text, Pressable } from 'react-native';
+import { View, Text, Pressable, Image } from 'react-native';
 import Animated, { AnimatedStyle } from 'react-native-reanimated';
 import { headerStyles as styles } from '../styles/headerStyles';
+import { Music } from './MusicPlayer';
 
 type HeaderProps = {
-    title: string;
-    artist: string;
-    animation: AnimatedStyle,
+    music: Music;
+    animation: AnimatedStyle;
     backgroundColor: string;
     onPress: () => void;
 }
@@ -24,10 +24,13 @@ const Header = (props: HeaderProps) => {
                 }
             ]}
         >
-            <View style={styles.album} />
+            <Image
+                source={{ uri: props.music.cover }}
+                style={styles.album}
+            />
             <View style={styles.titleWithArtistContainer}>
-                <Text style={styles.title}>{props.title}</Text>
-                <Text style={styles.artist}>{props.artist}</Text>
+                <Text style={styles.title}>{props.music.title}</Text>
+                <Text style={styles.artist}>{props.music.artist}</Text>
             </View>
             <View style={styles.controllerContainer}>
                 <Text>Play</Text>

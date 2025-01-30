@@ -33,9 +33,13 @@ export const HomeTabNavigation = () => {
                     component={ProfileScreen}
                 />
             </HomeTab.Navigator>
+
             <MusicPlayer
-                title='それを愛と呼ぶなら'
-                artist='Uru'
+                music={{
+                    title: 'The End of the World',
+                    artist: 'Skeeter Davis',
+                    cover: 'https://lh3.googleusercontent.com/qSL8OhDZrb2B3wlJT_jXU1m7fraQcD41y2BTU28ofspF0S1SBd0tlz0R0jMsg57AWu5XYXuDKT8vGEHm=w544-h544-s-l90-rj',
+                }}
             />
         </>
     );

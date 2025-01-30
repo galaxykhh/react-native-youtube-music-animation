@@ -15,7 +15,6 @@ export const headerStyles = StyleSheet.create({
     album: {
         width: 40,
         height: 40,
-        backgroundColor: 'green',
         borderRadius: 4,
     },
     titleWithArtistContainer: {
