@@ -1,4 +1,5 @@
 import { StyleSheet } from 'react-native';
+import { colors } from './colors';
 
 export const HEADER_HEIGHT = 74;
 
@@ -25,16 +26,17 @@ export const headerStyles = StyleSheet.create({
     title: {
         fontSize: 14,
         fontWeight: '700',
-        color: 'black'
+        color: colors.textA,
     },
     artist: {
         fontSize: 12,
         fontWeight: '400',
-        color: 'grey'
+        color: colors.textB,
     },
     controllerContainer: {
         flexDirection: 'row',
         alignItems: 'center',
         columnGap: 12,
+        paddingRight: 12,
     },
 });
