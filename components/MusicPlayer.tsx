@@ -22,25 +22,36 @@ export type MusicCover = {
 export type Music = {
     title: string;
     artist: string;
-    cover: MusicCover
+    cover: MusicCover;
 }
 
 export type MusicPlayerProps = {
     music: Music
     headerColor?: string;
     bodyColor?: string;
+    bottomInsets?: number;
 };
 
 const MusicPlayer = ({
     music,
     headerColor = '#ffffff',
-    bodyColor = '#ffffff'
+    bodyColor = '#ffffff',
+    ...rest
 }: MusicPlayerProps) => {
     /** 고정 사이즈 */
     const dimensions = useWindowDimensions();
-    const foldedOffsetY = useMemo(() => dimensions.height - HEADER_HEIGHT, []);
-    const bodyAlbumSize = useMemo(() => dimensions.width * 0.85, []);
-    const bodyAlbumPaddingHorizontal = useMemo(() => (dimensions.width - bodyAlbumSize) / 2, []);
+
+    const foldedOffsetY = useMemo(() => {
+        return dimensions.height - HEADER_HEIGHT - (rest.bottomInsets ?? 0);
+    }, [rest.bottomInsets]);
+
+    const bodyAlbumSize = useMemo(() => {
+        return dimensions.width * 0.85;
+    }, []);
+
+    const bodyAlbumPaddingHorizontal = useMemo(() => {
+        return (dimensions.width - bodyAlbumSize) / 2;
+    }, []);
 
     /** 플레이어 offset Y */
     const offsetY = useSharedValue<number>(foldedOffsetY);

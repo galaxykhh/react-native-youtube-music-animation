@@ -3,6 +3,7 @@ import MusicListScreen from '../screens/MusicList';
 import ProfileScreen from '../screens/Profile';
 import { createNativeStackNavigator, NativeStackNavigationProp, NativeStackScreenProps } from '@react-navigation/native-stack';
 import MusicDetailsScreen from '../screens/MusicDetails';
+import MusicPlayer from '../components/MusicPlayer';
 
 type HomeTabParamList = {
     MusicList: undefined;
@@ -32,6 +33,18 @@ export const HomeTabNavigation = () => {
                     component={ProfileScreen}
                 />
             </HomeTab.Navigator>
+
+            <MusicPlayer
+                music={{
+                    title: 'The End of the World',
+                    artist: 'Skeeter Davis',
+                    cover: {
+                        main: 'https://lh3.googleusercontent.com/qSL8OhDZrb2B3wlJT_jXU1m7fraQcD41y2BTU28ofspF0S1SBd0tlz0R0jMsg57AWu5XYXuDKT8vGEHm=w544-h544-s-l90-rj',
+                        thumbnail: 'https://lh3.googleusercontent.com/qSL8OhDZrb2B3wlJT_jXU1m7fraQcD41y2BTU28ofspF0S1SBd0tlz0R0jMsg57AWu5XYXuDKT8vGEHm=w60-h60-s-l90-rj',
+                    }
+                }}
+                bottomInsets={100}
+            />
         </>
     );
 };
