@@ -7,6 +7,7 @@ import Header from './Header';
 import { headerStyles } from '../styles/headerStyles';
 import { colors } from '../styles/colors';
 import Capsule from './Capsule';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const HEADER_HEIGHT = 74;
 const TOOLBAR_HEIGHT = 50;
@@ -40,6 +41,7 @@ const MusicPlayer = ({
 }: MusicPlayerProps) => {
     /** 고정 사이즈 */
     const dimensions = useWindowDimensions();
+    const { top } = useSafeAreaInsets();
 
     const foldedOffsetY = useMemo(() => {
         return dimensions.height - HEADER_HEIGHT - (rest.bottomInsets ?? 0);
@@ -63,6 +65,14 @@ const MusicPlayer = ({
         [headerColor, bodyColor],
     ));
 
+    /** 헤더 높이 */
+    const headerHeight = useDerivedValue(() => interpolate(
+        offsetY.value,
+        [foldedOffsetY, 0],
+        [HEADER_HEIGHT, top],
+        Extrapolation.CLAMP,
+    ));
+
     /** 바디(컨텐츠) 투명도 */
     const bodyOpacity = useDerivedValue(() => interpolate(
         offsetY.value,
@@ -84,11 +94,13 @@ const MusicPlayer = ({
                 [1, 0],
                 Extrapolation.CLAMP,
             ),
+            height: headerHeight.value,
         }
     }, []);
 
     const bodyHeaderAnimation = useAnimatedStyle(() => ({
         backgroundColor: headerBackgroundColor.value,
+        height: headerHeight.value,
     }), []);
 
     const bodyContentAnimation = useAnimatedStyle(() => ({
@@ -106,7 +118,6 @@ const MusicPlayer = ({
             [headerStyles.album.width, bodyAlbumSize],
             Extrapolation.CLAMP,
         );
-        // 헤더 높이 + 대형 앨범사이즈에서 헤더높이를 제외한 한쪽부분
 
         return {
             width: size,
@@ -187,7 +198,7 @@ const MusicPlayer = ({
                         }
                     ]
                 }>
-                    {/** Body Header */}
+                    {/* Body Header */}
                     <Animated.View style={
                         [
                             bodyHeaderAnimation,
@@ -198,10 +209,10 @@ const MusicPlayer = ({
                         ]
                     } />
 
-                    {/** Body Header */}
+                    {/* Body Header Background */}
                     <View style={{ backgroundColor: bodyColor, zIndex: 1 }}>
 
-                        {/** Body Toolbar */}
+                        {/* Body Toolbar */}
                         <Animated.View style={[toolbarAnimation, bodyStyles.toolbar]}>
                             <Pressable
                                 onPress={minimize}
@@ -222,7 +233,7 @@ const MusicPlayer = ({
                             </View>
                         </Animated.View>
 
-                        {/** Body Album */}
+                        {/* Body Album */}
                         <Animated.Image
                             source={{ uri: music.cover.main }}
                             resizeMode='cover'
@@ -234,7 +245,7 @@ const MusicPlayer = ({
                         />
                     </View>
 
-                    {/** Body */}
+                    {/* Body */}
                     <View style={[
                         {
                             ...bodyStyles.container,
@@ -248,7 +259,7 @@ const MusicPlayer = ({
                                 <Text style={bodyStyles.artist}>{music.artist}</Text>
                             </View>
 
-                            {/** Actions Container */}
+                            {/* Actions Container */}
                             <ScrollView
                                 horizontal
                                 style={{ flexGrow: 0 }}
@@ -286,11 +297,18 @@ const MusicPlayer = ({
                                 </Capsule>
                             </ScrollView>
 
+                            {/* Track Bar */}
+                            <View style={{ ...bodyStyles.trackBar, width: bodyAlbumSize, alignSelf: 'center' }}>
+
+                            </View>
+
+                            {/* Controller */}
                             <View style={{
                                 flexDirection: 'row',
                                 alignItems: 'center',
                                 justifyContent: 'space-between',
-                                paddingHorizontal: bodyAlbumPaddingHorizontal
+                                paddingHorizontal: bodyAlbumPaddingHorizontal,
+                                paddingVertical: 20,
                             }}>
                                 <Ionicons name='shuffle' color={colors.textA} size={30} />
                                 <Ionicons name='play-skip-back' color={colors.textA} size={30} />
@@ -298,11 +316,19 @@ const MusicPlayer = ({
                                 <Ionicons name='play-skip-forward' color={colors.textA} size={30} />
                                 <Ionicons name='repeat' color={colors.textA} size={30} />
                             </View>
-
                         </Animated.View>
+
+                        {/* Sheet */}
+                        <View style={{ paddingHorizontal: bodyAlbumPaddingHorizontal }}>
+                            <View style={bodyStyles.sheetTabContainer}>
+                                <Text style={{ color: colors.textA }}>次のコンテンツ</Text>
+                                <Text style={{ color: colors.textA }}>歌詞</Text>
+                                <Text style={{ color: colors.textA }}>関連コンテンツ</Text>
+                            </View>
+                        </View>
                     </View>
 
-                    {/** Header */}
+                    {/* Header */}
                     <Header
                         onPress={expand}
                         music={music}
@@ -350,6 +376,15 @@ const bodyStyles = StyleSheet.create({
         paddingHorizontal: 12,
         gap: 8,
         backgroundColor: colors.background0,
+    },
+    trackBar: {
+        height: 2,
+        backgroundColor: colors.textB,
+    },
+    sheetTabContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '100%',
     }
 });
 
