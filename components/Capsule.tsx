@@ -1,6 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 import { colors } from '../styles/colors';
 import { PropsWithChildren } from 'react';
+import { h, w } from '../styles/size';
 
 const Capsule = (props: PropsWithChildren) => {
     return (
@@ -15,9 +16,9 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-        gap: 4,
-        paddingHorizontal: 12,
-        paddingVertical: 8,
+        gap: w(4),
+        paddingHorizontal: w(12),
+        paddingVertical: h(8),
         backgroundColor: colors.background1,
         borderRadius: 999,
     }

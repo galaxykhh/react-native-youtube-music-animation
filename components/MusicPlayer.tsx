@@ -4,16 +4,21 @@ import Animated, { Easing, Extrapolation, interpolate, interpolateColor, runOnJS
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import Header from './Header';
-import { headerStyles } from '../styles/headerStyles';
+import { HEADER_HEIGHT, headerStyles } from '../styles/headerStyles';
 import { colors } from '../styles/colors';
 import Capsule from './Capsule';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { h, sp, w } from '../styles/size';
 
-const HEADER_HEIGHT = 74;
-const TOOLBAR_HEIGHT = 50;
+const TOOLBAR_HEIGHT = h(50);
 const FAST_VELOCITY_Y = 1000;
 const EASING_BEZIER = Easing.bezier(0.25, 0.5, 0, 1);
 const PLAYER_ANIMATION_DURATION = 500;
+
+type PlayerState =
+    | 'collapsed' // 축소
+    | 'expanded' // 확장
+    | 'fullyExpanded'; // 최대 확장
 
 export type MusicCover = {
     thumbnail: string;
@@ -41,42 +46,72 @@ const MusicPlayer = ({
 }: MusicPlayerProps) => {
     /** 고정 사이즈 */
     const dimensions = useWindowDimensions();
-    const { top } = useSafeAreaInsets();
+    const safeAreaInsets = useSafeAreaInsets();
 
-    const foldedOffsetY = useMemo(() => {
-        return dimensions.height - HEADER_HEIGHT - (rest.bottomInsets ?? 0);
-    }, [rest.bottomInsets]);
+    /** 하단 시트 높이 */
+    const sheetHeight = useMemo(() => {
+        return dimensions.height - HEADER_HEIGHT - safeAreaInsets.top;
+    }, [dimensions.height, safeAreaInsets.top]);
 
+    /** 바디 내 앨범 크기 */
     const bodyAlbumSize = useMemo(() => {
-        return dimensions.width * 0.85;
+        return sp(310)
     }, []);
 
+    /** 바디 내 앨범 횡패딩 */
     const bodyAlbumPaddingHorizontal = useMemo(() => {
-        return (dimensions.width - bodyAlbumSize) / 2;
+        return (sp(375) - bodyAlbumSize) / 2
     }, []);
+
+    /** 최대 OffsetY */
+    const maxOffsetY = useMemo(() => {
+        return dimensions.height - HEADER_HEIGHT - (rest.bottomInsets ?? 0);
+    }, [dimensions.height, rest.bottomInsets]);
+
+    /** 최소 offsetY */
+    const minOffsetY = useMemo(() => {
+        return -(sheetHeight - HEADER_HEIGHT - safeAreaInsets.top);
+    }, [safeAreaInsets.top]);
 
     /** 플레이어 offset Y */
-    const offsetY = useSharedValue<number>(foldedOffsetY);
+    const offsetY = useSharedValue<number>(maxOffsetY);
+
+    /** 플레이어 상태 */
+    const playerState = useDerivedValue<PlayerState>(() => {
+        const isFullyExpanded = offsetY.value === minOffsetY;
+
+        if (isFullyExpanded) {
+            return 'fullyExpanded';
+        }
+
+        const isExpanded = offsetY.value === 0;
+
+        if (isExpanded) {
+            return 'expanded'
+        }
+
+        return 'collapsed';
+    });
 
     /** 헤더 배경색 */
     const headerBackgroundColor = useDerivedValue(() => interpolateColor(
         offsetY.value,
-        [foldedOffsetY, foldedOffsetY / 3],
+        [maxOffsetY, maxOffsetY / 3],
         [headerColor, bodyColor],
     ));
 
     /** 헤더 높이 */
     const headerHeight = useDerivedValue(() => interpolate(
         offsetY.value,
-        [foldedOffsetY, 0],
-        [HEADER_HEIGHT, top],
+        [maxOffsetY, 0],
+        [HEADER_HEIGHT, safeAreaInsets.top],
         Extrapolation.CLAMP,
     ));
 
     /** 바디(컨텐츠) 투명도 */
     const bodyOpacity = useDerivedValue(() => interpolate(
         offsetY.value,
-        [foldedOffsetY, 0],
+        [maxOffsetY, 0],
         [0, 1],
         Extrapolation.CLAMP,
     ));
@@ -90,7 +125,7 @@ const MusicPlayer = ({
             backgroundColor: headerBackgroundColor.value,
             opacity: interpolate(
                 offsetY.value,
-                [foldedOffsetY, foldedOffsetY / 3],
+                [maxOffsetY, maxOffsetY / 3],
                 [1, 0],
                 Extrapolation.CLAMP,
             ),
@@ -114,7 +149,7 @@ const MusicPlayer = ({
     const bodyAlbumAnimation = useAnimatedStyle(() => {
         const size = interpolate(
             offsetY.value,
-            [foldedOffsetY, 0],
+            [maxOffsetY, 0],
             [headerStyles.album.width, bodyAlbumSize],
             Extrapolation.CLAMP,
         );
@@ -122,18 +157,18 @@ const MusicPlayer = ({
         return {
             width: size,
             height: size,
-            opacity: offsetY.value === foldedOffsetY ? 0 : 1,
-            pointerEvents: offsetY.value === foldedOffsetY ? 'none' : 'auto',
+            opacity: offsetY.value === maxOffsetY ? 0 : 1,
+            pointerEvents: offsetY.value === maxOffsetY ? 'none' : 'auto',
             borderRadius: interpolate(
                 offsetY.value,
-                [foldedOffsetY, 0],
+                [maxOffsetY, 0],
                 [headerStyles.album.borderRadius, 0],
             ),
             transform: [
                 {
                     translateX: interpolate(
                         offsetY.value,
-                        [foldedOffsetY, 0],
+                        [maxOffsetY, 0],
                         [headerStyles.container.paddingHorizontal, bodyAlbumPaddingHorizontal],
                         Extrapolation.CLAMP,
                     )
@@ -142,7 +177,7 @@ const MusicPlayer = ({
                     translateY: interpolate(
                         offsetY.value,
                         [
-                            foldedOffsetY,
+                            maxOffsetY,
                             0,
                         ],
                         [
@@ -156,8 +191,8 @@ const MusicPlayer = ({
         }
     }, []);
 
-    const minimize = useCallback(() => {
-        offsetY.value = withTiming(foldedOffsetY, {
+    const collapse = useCallback(() => {
+        offsetY.value = withTiming(maxOffsetY, {
             easing: EASING_BEZIER,
             duration: PLAYER_ANIMATION_DURATION,
         });
@@ -170,21 +205,40 @@ const MusicPlayer = ({
         });
     }, []);
 
+    const expandFully = useCallback(() => {
+        offsetY.value = withTiming(minOffsetY, {
+            easing: EASING_BEZIER,
+            duration: PLAYER_ANIMATION_DURATION,
+        });
+    }, []);
+
     const gesture = Gesture.Pan()
         .onChange(event => {
             const delta = event.changeY + offsetY.value;
-            offsetY.value = delta > foldedOffsetY ? foldedOffsetY : delta;
+            offsetY.value = delta > maxOffsetY
+                ? maxOffsetY
+                : delta < minOffsetY
+                    ? minOffsetY : delta;
         })
         .onEnd(event => {
             const isFast = Math.abs(event.velocityY) >= FAST_VELOCITY_Y;
+
             if (isFast) {
-                const shouldExpand = event.velocityY < FAST_VELOCITY_Y;
-                runOnJS(shouldExpand ? expand : minimize)();
-                return;
+                const isScrolledUp = event.velocityY < 0;
+
+                if (isScrolledUp) {
+                    // collapsed -> expanded
+                    const shouldExpand = (offsetY.value < maxOffsetY && offsetY.value > 0)
+                    return runOnJS(shouldExpand ? expand : expandFully)();
+                }
+                // fullyExpanded -> expanded
+                const shouldExpand = offsetY.value < 0 && offsetY.value > minOffsetY;
+                return runOnJS(shouldExpand ? expand : collapse)();
             }
 
             const shouldExpand = offsetY.value < dimensions.height * 0.5;
-            runOnJS(shouldExpand ? expand : minimize)();
+            const shouldExpandFully = shouldExpand && offsetY.value < -(dimensions.height * 0.5 - HEADER_HEIGHT);
+            runOnJS(shouldExpandFully ? expandFully : shouldExpand ? expand : collapse)();
         });
 
     return (
@@ -215,19 +269,19 @@ const MusicPlayer = ({
                         {/* Body Toolbar */}
                         <Animated.View style={[toolbarAnimation, bodyStyles.toolbar]}>
                             <Pressable
-                                onPress={minimize}
-                                hitSlop={{ top: 16, bottom: 16, left: 20, right: 20 }}
+                                onPress={collapse}
+                                hitSlop={{ top: sp(16), bottom: sp(16), left: w(20), right: w(20) }}
                             >
                                 <Ionicons
                                     name='chevron-down-sharp'
-                                    size={18}
+                                    size={sp(18)}
                                     color={colors.textA}
                                 />
                             </Pressable>
                             <View style={bodyStyles.toolbarActionsContainer}>
                                 <Ionicons
                                     name='ellipsis-vertical'
-                                    size={18}
+                                    size={sp(18)}
                                     color={colors.textA}
                                 />
                             </View>
@@ -250,7 +304,7 @@ const MusicPlayer = ({
                         {
                             ...bodyStyles.container,
                             backgroundColor: bodyColor,
-                            paddingTop: 20,
+                            paddingTop: h(20),
                         }
                     ]}>
                         <Animated.View style={bodyContentAnimation}>
@@ -278,7 +332,7 @@ const MusicPlayer = ({
 
                                 <Capsule>
                                     <Ionicons name='add' color={colors.textA} />
-                                    <Text style={{ color: colors.textA }}>Add</Text>
+                                    <Text style={{ color: colors.textA }}>Save</Text>
                                 </Capsule>
 
                                 <Capsule>
@@ -288,7 +342,7 @@ const MusicPlayer = ({
 
                                 <Capsule>
                                     <Ionicons name='save' color={colors.textA} />
-                                    <Text style={{ color: colors.textA }}>Save</Text>
+                                    <Text style={{ color: colors.textA }}>Download</Text>
                                 </Capsule>
 
                                 <Capsule>
@@ -308,23 +362,28 @@ const MusicPlayer = ({
                                 alignItems: 'center',
                                 justifyContent: 'space-between',
                                 paddingHorizontal: bodyAlbumPaddingHorizontal,
-                                paddingVertical: 20,
+                                paddingVertical: h(16),
                             }}>
-                                <Ionicons name='shuffle' color={colors.textA} size={30} />
-                                <Ionicons name='play-skip-back' color={colors.textA} size={30} />
-                                <Ionicons name='play-circle' color={colors.textA} size={80} />
-                                <Ionicons name='play-skip-forward' color={colors.textA} size={30} />
-                                <Ionicons name='repeat' color={colors.textA} size={30} />
+                                <Ionicons name='shuffle' color={colors.textA} size={sp(25)} />
+                                <Ionicons name='play-skip-back' color={colors.textA} size={sp(25)} />
+                                <Ionicons name='play-circle' color={colors.textA} size={sp(75)} />
+                                <Ionicons name='play-skip-forward' color={colors.textA} size={sp(25)} />
+                                <Ionicons name='repeat' color={colors.textA} size={sp(25)} />
                             </View>
                         </Animated.View>
 
                         {/* Sheet */}
-                        <View style={{ paddingHorizontal: bodyAlbumPaddingHorizontal }}>
+                        {/* <View style={{ paddingHorizontal: bodyAlbumPaddingHorizontal }}>
                             <View style={bodyStyles.sheetTabContainer}>
                                 <Text style={{ color: colors.textA }}>次のコンテンツ</Text>
                                 <Text style={{ color: colors.textA }}>歌詞</Text>
                                 <Text style={{ color: colors.textA }}>関連コンテンツ</Text>
                             </View>
+                        </View> */}
+                        <View style={{ width: '100%', height: sheetHeight, flexDirection: 'row', justifyContent: 'space-between', backgroundColor: 'red' }}>
+                            <Text>UP NEXT</Text>
+                            <Text>LYRICS</Text>
+                            <Text>RELATED</Text>
                         </View>
                     </View>
 
@@ -347,44 +406,51 @@ const bodyStyles = StyleSheet.create({
         alignItems: 'flex-start',
     },
     title: {
-        fontSize: 24,
+        fontSize: sp(24),
         fontWeight: 700,
-        marginBottom: 4,
+        marginBottom: h(4),
         color: colors.textA,
     },
     artist: {
-        fontSize: 16,
+        fontSize: sp(16),
         fontWeight: 400,
         color: colors.textB,
     },
     toolbar: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        padding: 12,
+        alignItems: 'center',
+        padding: w(12),
         height: TOOLBAR_HEIGHT,
+        backgroundColor: colors.background0,
     },
     toolbarActionsContainer: {
         flexDirection: 'row',
-        gap: 20,
+        gap: w(20),
     },
     actionsContainer: {
         flexGrow: 0,
         alignItems: 'center',
         alignSelf: 'stretch',
-        height: 50,
-        marginVertical: 20,
-        paddingHorizontal: 12,
-        gap: 8,
+        height: h(50),
+        marginVertical: h(20),
+        paddingHorizontal: w(12),
+        gap: w(8),
         backgroundColor: colors.background0,
     },
     trackBar: {
-        height: 2,
+        height: h(2),
         backgroundColor: colors.textB,
     },
     sheetTabContainer: {
+
         flexDirection: 'row',
         justifyContent: 'space-between',
         width: '100%',
+        backgroundColor: 'red',
+    },
+    tab: {
+
     }
 });
 

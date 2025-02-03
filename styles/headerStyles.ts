@@ -1,7 +1,8 @@
 import { StyleSheet } from 'react-native';
 import { colors } from './colors';
+import { h, sp, w } from './size';
 
-export const HEADER_HEIGHT = 74;
+export const HEADER_HEIGHT = h(74);
 
 export const headerStyles = StyleSheet.create({
     container: {
@@ -10,12 +11,12 @@ export const headerStyles = StyleSheet.create({
         alignItems: 'center',
         width: '100%',
         height: HEADER_HEIGHT,
-        columnGap: 12,
-        paddingHorizontal: 8,
+        gap: w(12),
+        paddingHorizontal: w(8),
     },
     album: {
-        width: 40,
-        height: 40,
+        width: w(40),
+        height: w(40),
         borderRadius: 4,
     },
     titleWithArtistContainer: {
@@ -24,19 +25,19 @@ export const headerStyles = StyleSheet.create({
         rowGap: 4,
     },
     title: {
-        fontSize: 14,
+        fontSize: sp(14),
         fontWeight: '700',
         color: colors.textA,
     },
     artist: {
-        fontSize: 12,
+        fontSize: sp(12),
         fontWeight: '400',
         color: colors.textB,
     },
     controllerContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        columnGap: 12,
-        paddingRight: 12,
+        gap: w(12),
+        paddingRight: w(12),
     },
 });

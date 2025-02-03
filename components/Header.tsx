@@ -4,6 +4,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { headerStyles as styles } from '../styles/headerStyles';
 import { Music } from './MusicPlayer';
 import { colors } from '../styles/colors';
+import { sp } from '../styles/size';
 
 type HeaderProps = {
     music: Music;
@@ -38,7 +39,7 @@ const Header = (props: HeaderProps) => {
             <View style={styles.controllerContainer}>
                 <Ionicons
                     name='play-sharp'
-                    size={20}
+                    size={sp(20)}
                     color={colors.textA}
                 />
             </View>
