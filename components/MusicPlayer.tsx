@@ -196,7 +196,7 @@ const MusicPlayer = ({
         return {
             width: size,
             height: size,
-            opacity: offsetY.value === maxOffsetY ? 0 : 1,
+            opacity: offsetY.value === maxOffsetY || offsetY.value === minOffsetY ? 0 : 1,
             pointerEvents: offsetY.value === maxOffsetY ? 'none' : 'auto',
             borderRadius: interpolate(
                 offsetY.value,
@@ -267,9 +267,7 @@ const MusicPlayer = ({
             offsetY.value = delta > maxOffsetY
                 ? maxOffsetY
                 : delta < minOffsetY
-                    ? delta : delta;
-            // TODO: fix
-            // ? minOffsetY : delta;
+                    ? minOffsetY : delta;
         })
         .onEnd(event => {
             const isFast = Math.abs(event.velocityY) >= FAST_VELOCITY_Y;
@@ -510,7 +508,8 @@ const bodyStyles = StyleSheet.create({
         borderTopRightRadius: 12,
     },
     tab: {
-        color: colors.textA,
+        color: colors.textB,
+        fontWeight: 600,
     }
 });
 

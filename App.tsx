@@ -37,16 +37,6 @@ export default function App() {
   );
 }
 
-// export default function App() {
-//   return (
-//     <GestureHandlerRootView style={{ flex: 1 }}>
-//       <NavigationContainer>
-//         <RootNavigation />
-//       </NavigationContainer>
-//     </GestureHandlerRootView>
-//   );
-// }
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
