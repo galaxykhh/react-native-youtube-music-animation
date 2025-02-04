@@ -1,12 +1,13 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import MusicPlayer from './components/MusicPlayer';
 import { colors } from './styles/colors';
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const Inner = () => {
-  const { bottom } = useSafeAreaInsets();
+  const insets = useSafeAreaInsets();
+
   return (
     <MusicPlayer
       music={{
@@ -19,7 +20,7 @@ const Inner = () => {
       }}
       headerColor={colors.background1}
       bodyColor={colors.background0}
-      bottomInsets={bottom}
+      bottomInsets={insets.bottom}
     />
   );
 }
@@ -27,11 +28,19 @@ const Inner = () => {
 export default function App() {
   return (
     <SafeAreaProvider>
-
       <GestureHandlerRootView style={{ flex: 1 }}>
-        <View style={styles.container}>
-          <Inner />
-        </View>
+        {Platform.select({
+          android: (
+            <SafeAreaView style={styles.container} edges={['top']}>
+              <Inner />
+            </SafeAreaView>
+          ),
+          ios: (
+            <View style={styles.container}>
+              <Inner />
+            </View>
+          )
+        })}
       </GestureHandlerRootView>
     </SafeAreaProvider>
   );
@@ -40,7 +49,6 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    position: 'relative',
     backgroundColor: '#131313',
     alignItems: 'center',
     justifyContent: 'center',

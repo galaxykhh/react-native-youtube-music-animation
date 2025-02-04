@@ -15,6 +15,7 @@ const FAST_VELOCITY_Y = 1000;
 const EASING_BEZIER = Easing.bezier(0.25, 0.5, 0, 1);
 const PLAYER_ANIMATION_DURATION = 500;
 const BODY_ALBUM_SIZE = w(310);
+const BODY_ALBUM_PADDING_HORIZONTAL = (sp(375) - BODY_ALBUM_SIZE) / 2;
 const SHEET_HEADER_HEIGHT = h(70);
 const controllerIconSizes = {
     play: sp(75),
@@ -22,9 +23,9 @@ const controllerIconSizes = {
 };
 
 type PlayerState =
-    | 'collapsed' // 축소
-    | 'expanded' // 확장
-    | 'fullyExpanded'; // 최대 확장
+    | 'collapsed'
+    | 'expanded'
+    | 'fullyExpanded';
 
 export type MusicCover = {
     thumbnail: string;
@@ -50,35 +51,31 @@ const MusicPlayer = ({
     bodyColor = '#ffffff',
     ...rest
 }: MusicPlayerProps) => {
-    /** 고정 사이즈 */
     const dimensions = useWindowDimensions();
     const safeAreaInsets = useSafeAreaInsets();
 
-    /** 하단 시트 높이 */
     const sheetHeight = useMemo(() => {
         return dimensions.height - HEADER_HEIGHT - safeAreaInsets.top;
     }, [dimensions.height, safeAreaInsets.top]);
 
-    /** 바디 내 앨범 횡패딩 */
-    const bodyAlbumPaddingHorizontal = useMemo(() => {
-        return (sp(375) - BODY_ALBUM_SIZE) / 2
-    }, []);
-
-    /** 최대 OffsetY */
+    /**
+     * The maximum value of offsetY.
+     * maximum value indicates the collapsed state.
+     */
     const maxOffsetY = useMemo(() => {
         return dimensions.height - HEADER_HEIGHT - rest.bottomInsets;
     }, [dimensions.height, rest.bottomInsets]);
 
-    /** 최소 offsetY */
+    /**
+     * The minimum value of offset Y.
+     * minimum value indicates the [fullyExpanded] state.
+     */
     const minOffsetY = useMemo(() => {
         return -1 * (dimensions.height - HEADER_HEIGHT - safeAreaInsets.top - SHEET_HEADER_HEIGHT + rest.bottomInsets);
     }, [dimensions.height, safeAreaInsets.top]);
 
-
-    /** 플레이어 offset Y */
     const offsetY = useSharedValue<number>(maxOffsetY);
 
-    /** 플레이어 상태 */
     const playerState = useDerivedValue<PlayerState>(() => {
         const isFullyExpanded = offsetY.value === minOffsetY;
 
@@ -95,14 +92,12 @@ const MusicPlayer = ({
         return 'collapsed';
     });
 
-    /** 헤더 배경색 */
     const headerBackgroundColor = useDerivedValue(() => interpolateColor(
         offsetY.value,
         [maxOffsetY, maxOffsetY / 3],
         [headerColor, bodyColor],
     ));
 
-    /** 헤더 높이 */
     const headerHeight = useDerivedValue(() => interpolate(
         offsetY.value,
         [minOffsetY, 0, maxOffsetY],
@@ -110,7 +105,6 @@ const MusicPlayer = ({
         Extrapolation.CLAMP,
     ));
 
-    /** 바디(컨텐츠) 투명도 */
     const bodyOpacity = useDerivedValue(() => interpolate(
         offsetY.value,
         [minOffsetY, 0, maxOffsetY],
@@ -214,7 +208,7 @@ const MusicPlayer = ({
                         ],
                         [
                             headerStyles.container.paddingHorizontal,
-                            bodyAlbumPaddingHorizontal,
+                            BODY_ALBUM_PADDING_HORIZONTAL,
                             headerStyles.container.paddingHorizontal,
                         ],
                         Extrapolation.CLAMP,
@@ -359,7 +353,7 @@ const MusicPlayer = ({
                             }
                         ]}>
                         <Animated.View style={bodyContentAnimation}>
-                            <View style={{ paddingHorizontal: bodyAlbumPaddingHorizontal }}>
+                            <View style={{ paddingHorizontal: BODY_ALBUM_PADDING_HORIZONTAL }}>
                                 <Text style={bodyStyles.title}>{music.title}</Text>
                                 <Text style={bodyStyles.artist}>{music.artist}</Text>
                             </View>
@@ -402,8 +396,8 @@ const MusicPlayer = ({
                                 </Capsule>
                             </ScrollView>
 
-                            {/* Track Bar */}
-                            <View style={{ ...bodyStyles.trackBar, width: BODY_ALBUM_SIZE, alignSelf: 'center' }}>
+                            {/* Progress Bar */}
+                            <View style={{ ...bodyStyles.progressBar, width: BODY_ALBUM_SIZE, alignSelf: 'center' }}>
 
                             </View>
 
@@ -412,7 +406,7 @@ const MusicPlayer = ({
                                 flexDirection: 'row',
                                 alignItems: 'center',
                                 justifyContent: 'space-between',
-                                paddingHorizontal: bodyAlbumPaddingHorizontal,
+                                paddingHorizontal: BODY_ALBUM_PADDING_HORIZONTAL,
                                 paddingTop: h(16),
                             }}>
                                 <Ionicons name='shuffle' color={colors.textA} size={controllerIconSizes.others} />
@@ -493,7 +487,7 @@ const bodyStyles = StyleSheet.create({
         gap: w(8),
         backgroundColor: colors.background0,
     },
-    trackBar: {
+    progressBar: {
         height: h(2),
         backgroundColor: colors.textB,
     },
