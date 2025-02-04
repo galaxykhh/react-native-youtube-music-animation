@@ -14,6 +14,12 @@ const TOOLBAR_HEIGHT = h(50);
 const FAST_VELOCITY_Y = 1000;
 const EASING_BEZIER = Easing.bezier(0.25, 0.5, 0, 1);
 const PLAYER_ANIMATION_DURATION = 500;
+const BODY_ALBUM_SIZE = w(310);
+const SHEET_HEADER_HEIGHT = h(70);
+const controllerIconSizes = {
+    play: sp(75),
+    others: sp(25),
+};
 
 type PlayerState =
     | 'collapsed' // 축소
@@ -53,25 +59,21 @@ const MusicPlayer = ({
         return dimensions.height - HEADER_HEIGHT - safeAreaInsets.top;
     }, [dimensions.height, safeAreaInsets.top]);
 
-    /** 바디 내 앨범 크기 */
-    const bodyAlbumSize = useMemo(() => {
-        return sp(310)
-    }, []);
-
     /** 바디 내 앨범 횡패딩 */
     const bodyAlbumPaddingHorizontal = useMemo(() => {
-        return (sp(375) - bodyAlbumSize) / 2
+        return (sp(375) - BODY_ALBUM_SIZE) / 2
     }, []);
 
     /** 최대 OffsetY */
     const maxOffsetY = useMemo(() => {
-        return dimensions.height - HEADER_HEIGHT - (rest.bottomInsets ?? 0);
+        return dimensions.height - HEADER_HEIGHT - rest.bottomInsets;
     }, [dimensions.height, rest.bottomInsets]);
 
     /** 최소 offsetY */
     const minOffsetY = useMemo(() => {
-        return -(sheetHeight - HEADER_HEIGHT - safeAreaInsets.top);
-    }, [safeAreaInsets.top]);
+        return -1 * (dimensions.height - HEADER_HEIGHT - safeAreaInsets.top - SHEET_HEADER_HEIGHT + rest.bottomInsets);
+    }, [dimensions.height, safeAreaInsets.top]);
+
 
     /** 플레이어 offset Y */
     const offsetY = useSharedValue<number>(maxOffsetY);
@@ -103,18 +105,35 @@ const MusicPlayer = ({
     /** 헤더 높이 */
     const headerHeight = useDerivedValue(() => interpolate(
         offsetY.value,
-        [maxOffsetY, 0],
-        [HEADER_HEIGHT, safeAreaInsets.top],
+        [minOffsetY, 0, maxOffsetY],
+        [HEADER_HEIGHT, safeAreaInsets.top, HEADER_HEIGHT],
         Extrapolation.CLAMP,
     ));
 
     /** 바디(컨텐츠) 투명도 */
     const bodyOpacity = useDerivedValue(() => interpolate(
         offsetY.value,
-        [maxOffsetY, 0],
-        [0, 1],
+        [minOffsetY, 0, maxOffsetY],
+        [0, 1, 0],
         Extrapolation.CLAMP,
     ));
+
+    const sheetAnimation = useAnimatedStyle(() => ({
+        backgroundColor: interpolateColor(
+            offsetY.value,
+            [0, minOffsetY],
+            [bodyColor, headerColor],
+        ),
+        transform: [
+            {
+                translateY: interpolate(
+                    offsetY.value,
+                    [0, minOffsetY],
+                    [-rest.bottomInsets, 0],
+                )
+            }
+        ]
+    }), []);
 
     const playerAnimation = useAnimatedStyle(() => ({
         transform: [{ translateY: offsetY.value }],
@@ -125,11 +144,21 @@ const MusicPlayer = ({
             backgroundColor: headerBackgroundColor.value,
             opacity: interpolate(
                 offsetY.value,
-                [maxOffsetY, maxOffsetY / 3],
-                [1, 0],
+                [minOffsetY, 0, maxOffsetY],
+                [1, 0, 1],
                 Extrapolation.CLAMP,
             ),
             height: headerHeight.value,
+            transform: [
+                {
+                    translateY: interpolate(
+                        offsetY.value,
+                        [0, minOffsetY],
+                        [0, safeAreaInsets.top - minOffsetY],
+                        Extrapolation.CLAMP,
+                    )
+                }
+            ],
         }
     }, []);
 
@@ -140,6 +169,16 @@ const MusicPlayer = ({
 
     const bodyContentAnimation = useAnimatedStyle(() => ({
         opacity: bodyOpacity.value,
+        transform: [
+            {
+                translateY: interpolate(
+                    offsetY.value,
+                    [minOffsetY, 0],
+                    [-minOffsetY, 0],
+                    Extrapolation.CLAMP,
+                )
+            }
+        ],
     }), []);
 
     const toolbarAnimation = useAnimatedStyle(() => ({
@@ -149,8 +188,8 @@ const MusicPlayer = ({
     const bodyAlbumAnimation = useAnimatedStyle(() => {
         const size = interpolate(
             offsetY.value,
-            [maxOffsetY, 0],
-            [headerStyles.album.width, bodyAlbumSize],
+            [minOffsetY, 0, maxOffsetY],
+            [headerStyles.album.width, BODY_ALBUM_SIZE, headerStyles.album.width],
             Extrapolation.CLAMP,
         );
 
@@ -161,15 +200,23 @@ const MusicPlayer = ({
             pointerEvents: offsetY.value === maxOffsetY ? 'none' : 'auto',
             borderRadius: interpolate(
                 offsetY.value,
-                [maxOffsetY, 0],
-                [headerStyles.album.borderRadius, 0],
+                [minOffsetY, 0, maxOffsetY],
+                [headerStyles.album.borderRadius, 0, headerStyles.album.borderRadius],
             ),
             transform: [
                 {
                     translateX: interpolate(
                         offsetY.value,
-                        [maxOffsetY, 0],
-                        [headerStyles.container.paddingHorizontal, bodyAlbumPaddingHorizontal],
+                        [
+                            minOffsetY,
+                            0,
+                            maxOffsetY,
+                        ],
+                        [
+                            headerStyles.container.paddingHorizontal,
+                            bodyAlbumPaddingHorizontal,
+                            headerStyles.container.paddingHorizontal,
+                        ],
                         Extrapolation.CLAMP,
                     )
                 },
@@ -177,12 +224,14 @@ const MusicPlayer = ({
                     translateY: interpolate(
                         offsetY.value,
                         [
-                            maxOffsetY,
+                            minOffsetY,
                             0,
+                            maxOffsetY,
                         ],
                         [
-                            -(HEADER_HEIGHT + TOOLBAR_HEIGHT - (HEADER_HEIGHT - headerStyles.album.height) / 2),
+                            -minOffsetY + safeAreaInsets.top - TOOLBAR_HEIGHT - (HEADER_HEIGHT + headerStyles.album.height) / 2,
                             0,
+                            - 1 * (HEADER_HEIGHT + TOOLBAR_HEIGHT - (HEADER_HEIGHT - headerStyles.album.height) / 2),
                         ],
                         Extrapolation.CLAMP,
                     )
@@ -218,7 +267,9 @@ const MusicPlayer = ({
             offsetY.value = delta > maxOffsetY
                 ? maxOffsetY
                 : delta < minOffsetY
-                    ? minOffsetY : delta;
+                    ? delta : delta;
+            // TODO: fix
+            // ? minOffsetY : delta;
         })
         .onEnd(event => {
             const isFast = Math.abs(event.velocityY) >= FAST_VELOCITY_Y;
@@ -244,14 +295,15 @@ const MusicPlayer = ({
     return (
         <>
             <GestureDetector gesture={gesture}>
-                <Animated.View style={
-                    [
-                        playerAnimation,
-                        {
-                            ...styles.container,
-                        }
-                    ]
-                }>
+                <Animated.View
+                    style={
+                        [
+                            playerAnimation,
+                            {
+                                ...styles.container,
+                            }
+                        ]
+                    }>
                     {/* Body Header */}
                     <Animated.View style={
                         [
@@ -300,13 +352,14 @@ const MusicPlayer = ({
                     </View>
 
                     {/* Body */}
-                    <View style={[
-                        {
-                            ...bodyStyles.container,
-                            backgroundColor: bodyColor,
-                            paddingTop: h(20),
-                        }
-                    ]}>
+                    <View
+                        style={[
+                            {
+                                ...bodyStyles.container,
+                                backgroundColor: bodyColor,
+                                paddingTop: h(20),
+                            }
+                        ]}>
                         <Animated.View style={bodyContentAnimation}>
                             <View style={{ paddingHorizontal: bodyAlbumPaddingHorizontal }}>
                                 <Text style={bodyStyles.title}>{music.title}</Text>
@@ -352,7 +405,7 @@ const MusicPlayer = ({
                             </ScrollView>
 
                             {/* Track Bar */}
-                            <View style={{ ...bodyStyles.trackBar, width: bodyAlbumSize, alignSelf: 'center' }}>
+                            <View style={{ ...bodyStyles.trackBar, width: BODY_ALBUM_SIZE, alignSelf: 'center' }}>
 
                             </View>
 
@@ -362,29 +415,33 @@ const MusicPlayer = ({
                                 alignItems: 'center',
                                 justifyContent: 'space-between',
                                 paddingHorizontal: bodyAlbumPaddingHorizontal,
-                                paddingVertical: h(16),
+                                paddingTop: h(16),
                             }}>
-                                <Ionicons name='shuffle' color={colors.textA} size={sp(25)} />
-                                <Ionicons name='play-skip-back' color={colors.textA} size={sp(25)} />
-                                <Ionicons name='play-circle' color={colors.textA} size={sp(75)} />
-                                <Ionicons name='play-skip-forward' color={colors.textA} size={sp(25)} />
-                                <Ionicons name='repeat' color={colors.textA} size={sp(25)} />
+                                <Ionicons name='shuffle' color={colors.textA} size={controllerIconSizes.others} />
+                                <Ionicons name='play-skip-back' color={colors.textA} size={controllerIconSizes.others} />
+                                <Ionicons name='play-circle' color={colors.textA} size={controllerIconSizes.play} />
+                                <Ionicons name='play-skip-forward' color={colors.textA} size={controllerIconSizes.others} />
+                                <Ionicons name='repeat' color={colors.textA} size={controllerIconSizes.others} />
                             </View>
                         </Animated.View>
 
                         {/* Sheet */}
-                        {/* <View style={{ paddingHorizontal: bodyAlbumPaddingHorizontal }}>
-                            <View style={bodyStyles.sheetTabContainer}>
-                                <Text style={{ color: colors.textA }}>次のコンテンツ</Text>
-                                <Text style={{ color: colors.textA }}>歌詞</Text>
-                                <Text style={{ color: colors.textA }}>関連コンテンツ</Text>
-                            </View>
-                        </View> */}
-                        <View style={{ width: '100%', height: sheetHeight, flexDirection: 'row', justifyContent: 'space-between', backgroundColor: 'red' }}>
-                            <Text>UP NEXT</Text>
-                            <Text>LYRICS</Text>
-                            <Text>RELATED</Text>
-                        </View>
+                        <Animated.View
+                            style={
+                                [
+                                    {
+                                        ...bodyStyles.sheetTabContainer,
+                                        bottom: -1 * (dimensions.height - HEADER_HEIGHT - safeAreaInsets.top + rest.bottomInsets - SHEET_HEADER_HEIGHT),
+                                        height: sheetHeight,
+                                    },
+                                    sheetAnimation,
+                                ]
+                            }
+                        >
+                            <Text style={bodyStyles.tab}>UP NEXT</Text>
+                            <Text style={bodyStyles.tab}>LYRICS</Text>
+                            <Text style={bodyStyles.tab}>RELATED</Text>
+                        </Animated.View>
                     </View>
 
                     {/* Header */}
@@ -443,14 +500,17 @@ const bodyStyles = StyleSheet.create({
         backgroundColor: colors.textB,
     },
     sheetTabContainer: {
-
+        position: 'absolute',
+        width: '100%',
         flexDirection: 'row',
         justifyContent: 'space-between',
-        width: '100%',
-        backgroundColor: 'red',
+        backgroundColor: colors.background0,
+        padding: w(20),
+        borderTopLeftRadius: 12,
+        borderTopRightRadius: 12,
     },
     tab: {
-
+        color: colors.textA,
     }
 });
 
