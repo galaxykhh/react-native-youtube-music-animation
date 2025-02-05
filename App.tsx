@@ -1,23 +1,20 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import MusicPlayer from './components/MusicPlayer';
+import MusicPlayer, { Music } from './components/MusicPlayer';
 import { colors } from './styles/colors';
 import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import fixtures from './fixture/musics.json';
 
 const Inner = () => {
   const insets = useSafeAreaInsets();
+  const [musics, setMusics] = useState<Music[]>(fixtures);
+  const [cursor, setCursor] = useState<number>(2);
+  const currentMusic = musics[cursor];
 
   return (
     <MusicPlayer
-      music={{
-        title: 'The End of the World',
-        artist: 'Skeeter Davis',
-        cover: {
-          main: 'https://lh3.googleusercontent.com/qSL8OhDZrb2B3wlJT_jXU1m7fraQcD41y2BTU28ofspF0S1SBd0tlz0R0jMsg57AWu5XYXuDKT8vGEHm=w544-h544-s-l90-rj',
-          thumbnail: 'https://lh3.googleusercontent.com/qSL8OhDZrb2B3wlJT_jXU1m7fraQcD41y2BTU28ofspF0S1SBd0tlz0R0jMsg57AWu5XYXuDKT8vGEHm=w60-h60-s-l90-rj',
-        }
-      }}
+      music={currentMusic}
       headerColor={colors.background1}
       bodyColor={colors.background0}
       bottomInsets={insets.bottom}
