@@ -1,6 +1,6 @@
-import { StyleSheet, Text, View, ScrollView, Image } from 'react-native';
+import { StyleSheet, Text, View, Image, ListRenderItemInfo } from 'react-native';
 import Animated, { runOnJS, useAnimatedReaction } from 'react-native-reanimated';
-import { GestureDetector } from 'react-native-gesture-handler';
+import { GestureDetector, FlatList, ScrollView } from 'react-native-gesture-handler';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import Header, { styles as headerStyles } from './Header';
 import Capsule from './Capsule';
@@ -38,6 +38,8 @@ export type MusicPlayerProps = {
     onStateChanged: (state: PlayerState) => void;
 };
 
+const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
+
 const MusicPlayer = ({
     tracks,
     initialIndex = 0,
@@ -46,11 +48,10 @@ const MusicPlayer = ({
     ...rest
 }: MusicPlayerProps) => {
     const [playerState, setPlayerState] = useState<PlayerState>('collapsed');
-    const [isZeroOffset, setIsZeroOffset] = useState<boolean>(false);
     const [index, setIndex] = useState<number>(initialIndex);
     const currentTrack = tracks[index];
-    const scrollRef = useRef<Animated.ScrollView>(null);
 
+    const scrollRef = useRef<FlatList>(null);
     // Animations
     const {
         maxOffsetY,
@@ -85,7 +86,7 @@ const MusicPlayer = ({
     const getIndexByScrollOffset = useCallback((offset: number) => {
         const divided = offset / w(375);
         const decimal = divided - Math.floor(divided);
-        const operator = decimal < 0.5 ? Math.ceil : Math.round;
+        const operator = decimal < 0.5 ? Math.floor : Math.round;
 
         return operator(divided);
     }, []);
@@ -97,9 +98,8 @@ const MusicPlayer = ({
         if (canBack) {
             setIndex(i => {
                 const nextIndex = i - 1;
-                scrollRef.current?.scrollTo({
-                    x: getScrollOffsetByIndex(nextIndex),
-                    y: 0,
+                scrollRef.current?.scrollToOffset({
+                    offset: getScrollOffsetByIndex(nextIndex),
                     animated: false,
                 });
 
@@ -115,9 +115,8 @@ const MusicPlayer = ({
         if (canForward) {
             setIndex(i => {
                 const nextIndex = i + 1;
-                scrollRef.current?.scrollTo({
-                    x: getScrollOffsetByIndex(nextIndex),
-                    y: 0,
+                scrollRef.current?.scrollToOffset({
+                    offset: getScrollOffsetByIndex(nextIndex),
                     animated: false,
                 });
 
@@ -125,6 +124,18 @@ const MusicPlayer = ({
             });
         }
     }
+
+    const renderTrack = useCallback(({ item }: ListRenderItemInfo<Track>) => {
+        return (
+            <View style={{ width: w(375), alignItems: 'center' }}>
+                <Image
+                    source={{ uri: item.cover.main }}
+                    resizeMode='cover'
+                    style={{ width: BODY_ALBUM_SIZE, height: BODY_ALBUM_SIZE }}
+                />
+            </View>
+        );
+    }, []);
 
     // Reaction: Set player state by offsetY
     useAnimatedReaction(
@@ -141,14 +152,6 @@ const MusicPlayer = ({
             if (offsetY.value === maxOffsetY) {
                 return runOnJS(setPlayerState)('collapsed');
             }
-        },
-    );
-
-    // Reaction: Set has zero offset by offsetY (Image <-> ScrollView)
-    useAnimatedReaction(
-        () => offsetY,
-        (offsetY) => {
-            runOnJS(setIsZeroOffset)(offsetY.value === 0);
         },
     );
 
@@ -200,29 +203,24 @@ const MusicPlayer = ({
                             />
 
                             {/* Tracks Scroll View */}
-                            <Animated.ScrollView
-                                ref={scrollRef}
+                            <AnimatedFlatList
                                 style={tracksScrollAnimation}
-                                contentOffset={{ x: w(375) * initialIndex, y: 0 }}
+                                ref={scrollRef}
+                                data={tracks}
+                                renderItem={renderTrack}
+                                keyExtractor={(item, index) => item['title'] + index}
+                                getItemLayout={(_, index) => ({
+                                    length: w(375),
+                                    offset: w(375) * index,
+                                    index,
+                                })}
+                                initialScrollIndex={initialIndex}
+                                scrollEventThrottle={16}
                                 horizontal
                                 pagingEnabled
-                                decelerationRate='fast'
                                 showsHorizontalScrollIndicator={false}
-                                onMomentumScrollEnd={(e) => setIndex(getIndexByScrollOffset(e.nativeEvent.contentOffset.x))}
-                            >
-                                {tracks.map(t => (
-                                    <View
-                                        key={t.title}
-                                        style={{ width: w(375), alignItems: 'center' }}
-                                    >
-                                        <Image
-                                            source={{ uri: t.cover.main }}
-                                            resizeMode='cover'
-                                            style={{ width: BODY_ALBUM_SIZE, height: BODY_ALBUM_SIZE }}
-                                        />
-                                    </View>
-                                ))}
-                            </Animated.ScrollView>
+                                onMomentumScrollEnd={e => setIndex(getIndexByScrollOffset(e.nativeEvent.contentOffset.x))}
+                            />
                         </Animated.View>
                     </View>
 
