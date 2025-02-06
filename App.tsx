@@ -9,15 +9,14 @@ import fixtures from './fixture/musics.json';
 const Inner = () => {
   const insets = useSafeAreaInsets();
   const [musics, setMusics] = useState<Music[]>(fixtures);
-  const [cursor, setCursor] = useState<number>(2);
-  const currentMusic = musics[cursor];
 
   return (
     <MusicPlayer
-      music={currentMusic}
+      musics={musics}
       headerColor={colors.background1}
       bodyColor={colors.background0}
       bottomInsets={insets.bottom}
+      onStateChanged={state => console.log('current player state: ', state)}
     />
   );
 }

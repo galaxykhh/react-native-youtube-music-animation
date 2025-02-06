@@ -1,16 +1,17 @@
-import { StyleSheet, Text, View, ScrollView } from 'react-native';
-import Animated, { useDerivedValue } from 'react-native-reanimated';
+import { StyleSheet, Text, View, ScrollView, Image } from 'react-native';
+import Animated, { runOnJS, useAnimatedReaction } from 'react-native-reanimated';
 import { GestureDetector } from 'react-native-gesture-handler';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import Header, { styles as headerStyles } from './Header';
 import Capsule from './Capsule';
 import Controller from './Controller';
 import Toolbar from './Toolbar';
-import { BODY_ALBUM_PADDING_HORIZONTAL } from './values';
+import { BODY_ALBUM_PADDING_HORIZONTAL, BODY_ALBUM_SIZE } from './values';
 import { colors } from '../styles/colors';
 import { h, sp, w } from '../styles/size';
 import ProgressBar from './ProgressBar';
 import { usePlayerAnimation } from './usePlayerAnimation';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 type PlayerState =
     | 'collapsed'
@@ -29,18 +30,26 @@ export type Music = {
 }
 
 export type MusicPlayerProps = {
-    music: Music
+    musics: Music[];
+    initialIndex?: number;
     headerColor?: string;
     bodyColor?: string;
     bottomInsets?: number;
+    onStateChanged: (state: PlayerState) => void;
 };
 
 const MusicPlayer = ({
-    music,
+    musics,
+    initialIndex = 2,
     headerColor = '#ffffff',
     bodyColor = '#ffffff',
     ...rest
 }: MusicPlayerProps) => {
+    const [playerState, setPlayerState] = useState<PlayerState>('collapsed');
+    const [isZeroOffset, setIsZeroOffset] = useState<boolean>(false);
+    const [index, setIndex] = useState<number>(initialIndex);
+    const currentMusic = musics[index];
+    const scrollRef = useRef<ScrollView>(null);
 
     // Animations
     const {
@@ -65,22 +74,82 @@ const MusicPlayer = ({
         bottomInsets: rest.bottomInsets,
     });
 
-    // State
-    const playerState = useDerivedValue<PlayerState>(() => {
-        const isFullyExpanded = offsetY.value === minOffsetY;
+    /** Returns the scroll offset based on the index */
+    const getScrollOffsetByIndex = useCallback((index: number) => {
+        return index * (BODY_ALBUM_SIZE + BODY_ALBUM_PADDING_HORIZONTAL);
+    }, []);
 
-        if (isFullyExpanded) {
-            return 'fullyExpanded';
+    /** Returns the index based on the scroll offset */
+    const getIndexByScrollOffset = useCallback((offset: number) => {
+        return offset / (BODY_ALBUM_SIZE + BODY_ALBUM_PADDING_HORIZONTAL);
+    }, []);
+
+    /** Moves to the previous track */
+    const skipBack = () => {
+        const canBack = index > 0;
+
+        if (canBack) {
+            setIndex(i => {
+                const nextIndex = i - 1;
+                scrollRef.current?.scrollTo({
+                    x: getScrollOffsetByIndex(nextIndex),
+                    y: 0,
+                    animated: false,
+                });
+
+                return nextIndex;
+            });
         }
+    }
 
-        const isExpanded = offsetY.value === 0;
+    /** Moves to the next track */
+    const skipForward = () => {
+        const canForward = index < musics.length - 1;
 
-        if (isExpanded) {
-            return 'expanded'
+        if (canForward) {
+            setIndex(i => {
+                const nextIndex = i + 1;
+                scrollRef.current?.scrollTo({
+                    x: getScrollOffsetByIndex(nextIndex),
+                    y: 0,
+                    animated: false,
+                });
+
+                return nextIndex;
+            });
         }
+    }
 
-        return 'collapsed';
-    });
+    // Reaction: Set player state by offsetY
+    useAnimatedReaction(
+        () => offsetY,
+        (offsetY) => {
+            if (offsetY.value === minOffsetY) {
+                return runOnJS(setPlayerState)('fullyExpanded');
+            }
+
+            if (offsetY.value === 0) {
+                return runOnJS(setPlayerState)('expanded');
+            }
+
+            if (offsetY.value === maxOffsetY) {
+                return runOnJS(setPlayerState)('collapsed');
+            }
+        },
+    );
+
+    // Reaction: Set has zero offset by offsetY (Image <-> ScrollView)
+    useAnimatedReaction(
+        () => offsetY,
+        (offsetY) => {
+            runOnJS(setIsZeroOffset)(offsetY.value === 0);
+        },
+    );
+
+    // Effect: onStateChanged callback
+    useEffect(() => {
+        rest.onStateChanged(playerState);
+    }, [playerState]);
 
     return (
         <>
@@ -122,15 +191,48 @@ const MusicPlayer = ({
                         />
 
                         {/* Body Album */}
-                        <Animated.Image
-                            source={{ uri: music.cover.main }}
-                            resizeMode='cover'
-                            style={[
-                                bodyAlbumAnimation,
-                                {
-                                    ...headerStyles.album,
-                                }]}
-                        />
+                        <View style={{ height: BODY_ALBUM_SIZE }}>
+                            {/* Animated Album */}
+                            <Animated.Image
+                                key={currentMusic.title}
+                                source={{ uri: currentMusic.cover.main }}
+                                resizeMode='cover'
+                                style={[
+                                    bodyAlbumAnimation,
+                                    {
+                                        ...headerStyles.album,
+                                    }]}
+                            />
+
+                            {/* Scrollable Area */}
+                            <ScrollView
+                                ref={scrollRef}
+                                contentOffset={{ x: (BODY_ALBUM_SIZE + BODY_ALBUM_PADDING_HORIZONTAL) * initialIndex, y: 0 }}
+                                horizontal
+                                pagingEnabled
+                                decelerationRate='fast'
+                                snapToInterval={BODY_ALBUM_SIZE + BODY_ALBUM_PADDING_HORIZONTAL}
+                                showsHorizontalScrollIndicator={false}
+                                onMomentumScrollEnd={(e) => setIndex(getIndexByScrollOffset(e.nativeEvent.contentOffset.x))}
+                                style={{
+                                    opacity: isZeroOffset ? 1 : 0,
+                                    position: 'absolute',
+                                    width: '100%',
+                                    height: BODY_ALBUM_SIZE,
+                                    backgroundColor: bodyColor,
+                                }}
+                                contentContainerStyle={{ paddingHorizontal: BODY_ALBUM_PADDING_HORIZONTAL, gap: BODY_ALBUM_PADDING_HORIZONTAL }}
+                            >
+                                {musics.map(m => (
+                                    <Image
+                                        key={m.title}
+                                        source={{ uri: m.cover.main }}
+                                        resizeMode='cover'
+                                        style={{ width: BODY_ALBUM_SIZE, height: BODY_ALBUM_SIZE }}
+                                    />
+                                ))}
+                            </ScrollView>
+                        </View>
                     </View>
 
                     {/* Body */}
@@ -144,8 +246,8 @@ const MusicPlayer = ({
                         ]}>
                         <Animated.View style={bodyContentAnimation}>
                             <View style={{ paddingHorizontal: BODY_ALBUM_PADDING_HORIZONTAL }}>
-                                <Text style={bodyStyles.title}>{music.title}</Text>
-                                <Text style={bodyStyles.artist}>{music.artist}</Text>
+                                <Text style={bodyStyles.title}>{currentMusic.title}</Text>
+                                <Text style={bodyStyles.artist}>{currentMusic.artist}</Text>
                             </View>
 
                             {/* Actions Container */}
@@ -192,9 +294,9 @@ const MusicPlayer = ({
                             {/* Controller */}
                             <Controller
                                 onShufflePress={() => { }}
-                                onSkipBackPress={() => { }}
+                                onSkipBackPress={skipBack}
                                 onPlayPress={() => { }}
-                                onSkipForwardPress={() => { }}
+                                onSkipForwardPress={skipForward}
                                 onRepeatPress={() => { }}
                             />
                         </Animated.View>
@@ -210,7 +312,7 @@ const MusicPlayer = ({
                     {/* Header */}
                     <Header
                         onPress={expand}
-                        music={music}
+                        music={currentMusic}
                         animation={headerAnimation}
                         albumAnimation={headerAlbumAnimation}
                         backgroundColor={headerColor}

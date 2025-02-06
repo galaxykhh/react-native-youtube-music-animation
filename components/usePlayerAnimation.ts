@@ -132,7 +132,7 @@ export const usePlayerAnimation = (options: UsePlayerAnimationOptions) => {
         opacity: bodyOpacity.value,
     }), []);
 
-    const bodyAlbumAnimation = useAnimatedStyle(() => {
+    const bodyAlbumAnimation = useAnimatedStyle<{}>(() => {
         const size = interpolate(
             offsetY.value,
             [minOffsetY, 0, maxOffsetY],
@@ -144,7 +144,7 @@ export const usePlayerAnimation = (options: UsePlayerAnimationOptions) => {
             width: size,
             height: size,
             opacity: offsetY.value === maxOffsetY || offsetY.value === minOffsetY ? 0 : 1,
-            pointerEvents: offsetY.value === maxOffsetY ? 'none' : 'auto',
+            pointerEvents: 'none',
             borderRadius: interpolate(
                 offsetY.value,
                 [minOffsetY, 0, maxOffsetY],
@@ -184,7 +184,7 @@ export const usePlayerAnimation = (options: UsePlayerAnimationOptions) => {
                     )
                 },
             ],
-        }
+        };
     }, []);
 
     const collapse = useCallback(() => {
