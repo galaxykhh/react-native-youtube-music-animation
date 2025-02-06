@@ -1,12 +1,12 @@
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import Animated, { AnimatedStyle } from 'react-native-reanimated';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Music } from './MusicPlayer';
+import { Track } from './MusicPlayer';
 import { colors } from '../styles/colors';
 import { w, h, sp } from '../styles/size';
 
 type HeaderProps = {
-    music: Music;
+    track: Track;
     animation: AnimatedStyle;
     albumAnimation: AnimatedStyle;
     backgroundColor: string;
@@ -28,13 +28,13 @@ const Header = (props: HeaderProps) => {
             ]}
         >
             <Animated.Image
-                source={{ uri: props.music.cover.thumbnail }}
+                source={{ uri: props.track.cover.thumbnail }}
                 resizeMode='cover'
                 style={[props.albumAnimation, styles.album]}
             />
             <View style={styles.titleWithArtistContainer}>
-                <Text style={styles.title}>{props.music.title}</Text>
-                <Text style={styles.artist}>{props.music.artist}</Text>
+                <Text style={styles.title}>{props.track.title}</Text>
+                <Text style={styles.artist}>{props.track.artist}</Text>
             </View>
             <View style={styles.controllerContainer}>
                 <Ionicons

@@ -18,19 +18,19 @@ type PlayerState =
     | 'expanded'
     | 'fullyExpanded';
 
-export type MusicCover = {
+export type TrackCover = {
     thumbnail: string;
     main: string;
 };
 
-export type Music = {
+export type Track = {
     title: string;
     artist: string;
-    cover: MusicCover;
+    cover: TrackCover;
 }
 
 export type MusicPlayerProps = {
-    musics: Music[];
+    tracks: Track[];
     initialIndex?: number;
     headerColor?: string;
     bodyColor?: string;
@@ -39,8 +39,8 @@ export type MusicPlayerProps = {
 };
 
 const MusicPlayer = ({
-    musics,
-    initialIndex = 2,
+    tracks,
+    initialIndex = 0,
     headerColor = '#ffffff',
     bodyColor = '#ffffff',
     ...rest
@@ -48,8 +48,8 @@ const MusicPlayer = ({
     const [playerState, setPlayerState] = useState<PlayerState>('collapsed');
     const [isZeroOffset, setIsZeroOffset] = useState<boolean>(false);
     const [index, setIndex] = useState<number>(initialIndex);
-    const currentMusic = musics[index];
-    const scrollRef = useRef<ScrollView>(null);
+    const currentTrack = tracks[index];
+    const scrollRef = useRef<Animated.ScrollView>(null);
 
     // Animations
     const {
@@ -64,6 +64,7 @@ const MusicPlayer = ({
         bodyContentAnimation,
         toolbarAnimation,
         bodyAlbumAnimation,
+        tracksScrollViewAnimation,
         collapse,
         expand,
         expandFully,
@@ -76,12 +77,16 @@ const MusicPlayer = ({
 
     /** Returns the scroll offset based on the index */
     const getScrollOffsetByIndex = useCallback((index: number) => {
-        return index * (BODY_ALBUM_SIZE + BODY_ALBUM_PADDING_HORIZONTAL);
+        return index * w(375);
     }, []);
 
     /** Returns the index based on the scroll offset */
     const getIndexByScrollOffset = useCallback((offset: number) => {
-        return offset / (BODY_ALBUM_SIZE + BODY_ALBUM_PADDING_HORIZONTAL);
+        const divided = offset / w(375);
+        const decimal = divided - Math.floor(divided);
+        const operator = decimal < 0.5 ? Math.ceil : Math.round;
+
+        return operator(divided);
     }, []);
 
     /** Moves to the previous track */
@@ -104,7 +109,7 @@ const MusicPlayer = ({
 
     /** Moves to the next track */
     const skipForward = () => {
-        const canForward = index < musics.length - 1;
+        const canForward = index < tracks.length - 1;
 
         if (canForward) {
             setIndex(i => {
@@ -194,8 +199,7 @@ const MusicPlayer = ({
                         <View style={{ height: BODY_ALBUM_SIZE }}>
                             {/* Animated Album */}
                             <Animated.Image
-                                key={currentMusic.title}
-                                source={{ uri: currentMusic.cover.main }}
+                                source={{ uri: currentTrack.cover.main }}
                                 resizeMode='cover'
                                 style={[
                                     bodyAlbumAnimation,
@@ -205,33 +209,29 @@ const MusicPlayer = ({
                             />
 
                             {/* Scrollable Area */}
-                            <ScrollView
+                            <Animated.ScrollView
                                 ref={scrollRef}
-                                contentOffset={{ x: (BODY_ALBUM_SIZE + BODY_ALBUM_PADDING_HORIZONTAL) * initialIndex, y: 0 }}
+                                style={tracksScrollViewAnimation}
+                                contentOffset={{ x: w(375) * initialIndex, y: 0 }}
                                 horizontal
                                 pagingEnabled
                                 decelerationRate='fast'
-                                snapToInterval={BODY_ALBUM_SIZE + BODY_ALBUM_PADDING_HORIZONTAL}
                                 showsHorizontalScrollIndicator={false}
                                 onMomentumScrollEnd={(e) => setIndex(getIndexByScrollOffset(e.nativeEvent.contentOffset.x))}
-                                style={{
-                                    opacity: isZeroOffset ? 1 : 0,
-                                    position: 'absolute',
-                                    width: '100%',
-                                    height: BODY_ALBUM_SIZE,
-                                    backgroundColor: bodyColor,
-                                }}
-                                contentContainerStyle={{ paddingHorizontal: BODY_ALBUM_PADDING_HORIZONTAL, gap: BODY_ALBUM_PADDING_HORIZONTAL }}
                             >
-                                {musics.map(m => (
-                                    <Image
-                                        key={m.title}
-                                        source={{ uri: m.cover.main }}
-                                        resizeMode='cover'
-                                        style={{ width: BODY_ALBUM_SIZE, height: BODY_ALBUM_SIZE }}
-                                    />
+                                {tracks.map(t => (
+                                    <View
+                                        key={t.title}
+                                        style={{ width: w(375), alignItems: 'center' }}
+                                    >
+                                        <Image
+                                            source={{ uri: t.cover.main }}
+                                            resizeMode='cover'
+                                            style={{ width: BODY_ALBUM_SIZE, height: BODY_ALBUM_SIZE }}
+                                        />
+                                    </View>
                                 ))}
-                            </ScrollView>
+                            </Animated.ScrollView>
                         </View>
                     </View>
 
@@ -246,8 +246,8 @@ const MusicPlayer = ({
                         ]}>
                         <Animated.View style={bodyContentAnimation}>
                             <View style={{ paddingHorizontal: BODY_ALBUM_PADDING_HORIZONTAL }}>
-                                <Text style={bodyStyles.title}>{currentMusic.title}</Text>
-                                <Text style={bodyStyles.artist}>{currentMusic.artist}</Text>
+                                <Text style={bodyStyles.title}>{currentTrack.title}</Text>
+                                <Text style={bodyStyles.artist}>{currentTrack.artist}</Text>
                             </View>
 
                             {/* Actions Container */}
@@ -312,7 +312,7 @@ const MusicPlayer = ({
                     {/* Header */}
                     <Header
                         onPress={expand}
-                        music={currentMusic}
+                        track={currentTrack}
                         animation={headerAnimation}
                         albumAnimation={headerAlbumAnimation}
                         backgroundColor={headerColor}

@@ -15,14 +15,12 @@ const scaleVertical = SCREEN_HEIGHT / DESIGN_HEIGHT;
 * 기기의 해상도에 따라 width를 동적으로 계산
 **/
 export const w = (pixel: number) => {
-    const scaled = pixel * scale;
-    return PixelRatio.roundToNearestPixel(scaled);
+    return PixelRatio.roundToNearestPixel(pixel * scale);
 };
 
 // 기기의 해상도에 따라 height를 동적으로 계산
 export const h = (pixel: number) => {
-    const scaled = pixel * scaleVertical;
-    return PixelRatio.roundToNearestPixel(scaled);
+    return PixelRatio.roundToNearestPixel(pixel * scaleVertical);
 };
 
 // 기기의 해상도에 따라 fontSize를 동적으로 계산

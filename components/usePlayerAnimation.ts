@@ -106,7 +106,7 @@ export const usePlayerAnimation = (options: UsePlayerAnimationOptions) => {
     }, []);
 
     const headerAlbumAnimation = useAnimatedStyle(() => ({
-        opacity: offsetY.value === 0 || offsetY.value === maxOffsetY || offsetY.value === minOffsetY ? 1 : 0,
+        opacity: offsetY.value === maxOffsetY || offsetY.value === minOffsetY ? 1 : 0,
     }), []);
 
     const bodyHeaderAnimation = useAnimatedStyle(() => ({
@@ -187,6 +187,14 @@ export const usePlayerAnimation = (options: UsePlayerAnimationOptions) => {
         };
     }, []);
 
+    const tracksScrollViewAnimation = useAnimatedStyle(() => ({
+        position: 'absolute',
+        width: '100%',
+        opacity: offsetY.value === 0 ? 1 : 0,
+        height: BODY_ALBUM_SIZE,
+        backgroundColor: headerBackgroundColor.value,
+    }), []);
+
     const collapse = useCallback(() => {
         offsetY.value = withTiming(maxOffsetY, {
             easing: EASING_BEZIER,
@@ -250,6 +258,7 @@ export const usePlayerAnimation = (options: UsePlayerAnimationOptions) => {
         bodyContentAnimation,
         toolbarAnimation,
         bodyAlbumAnimation,
+        tracksScrollViewAnimation,
         collapse,
         expand,
         expandFully,

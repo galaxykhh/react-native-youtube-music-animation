@@ -1,18 +1,18 @@
 import React, { useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import MusicPlayer, { Music } from './components/MusicPlayer';
+import MusicPlayer, { Track } from './components/MusicPlayer';
 import { colors } from './styles/colors';
 import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import fixtures from './fixture/musics.json';
+import fixtures from './fixture/tracks.json';
 
 const Inner = () => {
   const insets = useSafeAreaInsets();
-  const [musics, setMusics] = useState<Music[]>(fixtures);
+  const [tracks, setTracks] = useState<Track[]>(fixtures);
 
   return (
     <MusicPlayer
-      musics={musics}
+      tracks={tracks}
       headerColor={colors.background1}
       bodyColor={colors.background0}
       bottomInsets={insets.bottom}
