@@ -64,7 +64,8 @@ const MusicPlayer = ({
         bodyContentAnimation,
         toolbarAnimation,
         bodyAlbumAnimation,
-        tracksScrollViewAnimation,
+        tracksScrollAnimation,
+        tracksScrollWrapperAnimations,
         collapse,
         expand,
         expandFully,
@@ -159,25 +160,15 @@ const MusicPlayer = ({
     return (
         <>
             <GestureDetector gesture={gesture}>
-                <Animated.View
-                    style={
-                        [
-                            playerAnimation,
-                            {
-                                ...styles.container,
-                            }
-                        ]
-                    }>
+                <Animated.View style={{ ...playerAnimation, ...styles.container }}>
                     {/* Body Header */}
-                    <Animated.View style={
-                        [
-                            bodyHeaderAnimation,
-                            {
-                                ...headerStyles.container,
-                                position: 'static'
-                            }
-                        ]
-                    } />
+                    <Animated.View
+                        style={{
+                            ...bodyHeaderAnimation,
+                            ...headerStyles.container,
+                            position: 'static',
+                        }}
+                    />
 
                     {/* Body Header Background */}
                     <View style={{ backgroundColor: bodyColor, zIndex: 1 }}>
@@ -195,8 +186,8 @@ const MusicPlayer = ({
                             )}
                         />
 
-                        {/* Body Album */}
-                        <View style={{ height: BODY_ALBUM_SIZE }}>
+                        {/* Tracks Scroll Wrapper */}
+                        <Animated.View style={tracksScrollWrapperAnimations}>
                             {/* Animated Album */}
                             <Animated.Image
                                 source={{ uri: currentTrack.cover.main }}
@@ -208,10 +199,10 @@ const MusicPlayer = ({
                                     }]}
                             />
 
-                            {/* Scrollable Area */}
+                            {/* Tracks Scroll View */}
                             <Animated.ScrollView
                                 ref={scrollRef}
-                                style={tracksScrollViewAnimation}
+                                style={tracksScrollAnimation}
                                 contentOffset={{ x: w(375) * initialIndex, y: 0 }}
                                 horizontal
                                 pagingEnabled
@@ -232,7 +223,7 @@ const MusicPlayer = ({
                                     </View>
                                 ))}
                             </Animated.ScrollView>
-                        </View>
+                        </Animated.View>
                     </View>
 
                     {/* Body */}

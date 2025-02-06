@@ -187,11 +187,18 @@ export const usePlayerAnimation = (options: UsePlayerAnimationOptions) => {
         };
     }, []);
 
-    const tracksScrollViewAnimation = useAnimatedStyle(() => ({
+    const tracksScrollWrapperAnimations = useAnimatedStyle(() => ({
+        height: interpolate(
+            offsetY.value,
+            [minOffsetY, 0, maxOffsetY],
+            [0, BODY_ALBUM_SIZE, 0],
+        ),
+    }), []);
+
+    const tracksScrollAnimation = useAnimatedStyle(() => ({
         position: 'absolute',
         width: '100%',
         opacity: offsetY.value === 0 ? 1 : 0,
-        height: BODY_ALBUM_SIZE,
         backgroundColor: headerBackgroundColor.value,
     }), []);
 
@@ -258,7 +265,8 @@ export const usePlayerAnimation = (options: UsePlayerAnimationOptions) => {
         bodyContentAnimation,
         toolbarAnimation,
         bodyAlbumAnimation,
-        tracksScrollViewAnimation,
+        tracksScrollAnimation,
+        tracksScrollWrapperAnimations,
         collapse,
         expand,
         expandFully,
