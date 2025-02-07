@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View, Image, ListRenderItemInfo } from 'react-native';
 import Animated, { runOnJS, useAnimatedReaction } from 'react-native-reanimated';
 import { GestureDetector, FlatList, ScrollView } from 'react-native-gesture-handler';
@@ -6,14 +7,14 @@ import Header, { styles as headerStyles } from './Header';
 import Capsule from './Capsule';
 import Controller from './Controller';
 import Toolbar from './Toolbar';
+import ProgressBar from './ProgressBar';
 import { BODY_ALBUM_PADDING_HORIZONTAL, BODY_ALBUM_SIZE } from './values';
 import { colors } from '../styles/colors';
 import { h, sp, w } from '../styles/size';
-import ProgressBar from './ProgressBar';
 import { usePlayerAnimation } from './usePlayerAnimation';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { usePlayerState } from './usePlayerState';
 
-type PlayerState =
+type AnimationState =
     | 'collapsed'
     | 'expanded'
     | 'fullyExpanded';
@@ -35,7 +36,7 @@ export type MusicPlayerProps = {
     headerColor?: string;
     bodyColor?: string;
     bottomInsets?: number;
-    onStateChanged: (state: PlayerState) => void;
+    onAnimationStateChanged: (state: AnimationState) => void;
 };
 
 const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
@@ -47,11 +48,17 @@ const MusicPlayer = ({
     bodyColor = '#ffffff',
     ...rest
 }: MusicPlayerProps) => {
-    const [playerState, setPlayerState] = useState<PlayerState>('collapsed');
+    const [playerState, setPlayerState] = useState<AnimationState>('collapsed');
     const [index, setIndex] = useState<number>(initialIndex);
     const currentTrack = tracks[index];
-
     const scrollRef = useRef<FlatList>(null);
+
+    // Determines whether there is a previous track based on the currently playing track.
+    const canSkipBack = index > 0;
+
+    // Determines whether there is a next track based on the currently playing track.
+    const canSkipForward = index < tracks.length - 1
+
     // Animations
     const {
         maxOffsetY,
@@ -77,6 +84,16 @@ const MusicPlayer = ({
         bottomInsets: rest.bottomInsets,
     });
 
+    const {
+        isPlaying,
+        isShuffle,
+        isRepeat,
+        play,
+        pause,
+        toggleShuffle,
+        toggleRepeat,
+    } = usePlayerState();
+
     /** Returns the scroll offset based on the index */
     const getScrollOffsetByIndex = useCallback((index: number) => {
         return index * w(375);
@@ -93,9 +110,7 @@ const MusicPlayer = ({
 
     /** Moves to the previous track */
     const skipBack = () => {
-        const canBack = index > 0;
-
-        if (canBack) {
+        if (canSkipBack) {
             setIndex(i => {
                 const nextIndex = i - 1;
                 scrollRef.current?.scrollToOffset({
@@ -110,9 +125,7 @@ const MusicPlayer = ({
 
     /** Moves to the next track */
     const skipForward = () => {
-        const canForward = index < tracks.length - 1;
-
-        if (canForward) {
+        if (canSkipForward) {
             setIndex(i => {
                 const nextIndex = i + 1;
                 scrollRef.current?.scrollToOffset({
@@ -155,9 +168,9 @@ const MusicPlayer = ({
         },
     );
 
-    // Effect: onStateChanged callback
+    // Effect: onAnimationStateChanged callback
     useEffect(() => {
-        rest.onStateChanged(playerState);
+        rest.onAnimationStateChanged(playerState);
     }, [playerState]);
 
     return (
@@ -246,32 +259,32 @@ const MusicPlayer = ({
                                 showsHorizontalScrollIndicator={false}
                                 contentContainerStyle={bodyStyles.actionsContainer}
                             >
-                                <Capsule>
+                                <Capsule backgroundColor={colors.background1}>
                                     <Ionicons name='thumbs-up' color={colors.textA} />
                                     <Text style={{ color: colors.textA }}>5588</Text>
                                 </Capsule>
 
-                                <Capsule>
+                                <Capsule backgroundColor={colors.background1}>
                                     <Ionicons name='mail' color={colors.textA} />
                                     <Text style={{ color: colors.textA }}>30</Text>
                                 </Capsule>
 
-                                <Capsule>
+                                <Capsule backgroundColor={colors.background1}>
                                     <Ionicons name='add' color={colors.textA} />
                                     <Text style={{ color: colors.textA }}>Save</Text>
                                 </Capsule>
 
-                                <Capsule>
+                                <Capsule backgroundColor={colors.background1}>
                                     <Ionicons name='share-social' color={colors.textA} />
                                     <Text style={{ color: colors.textA }}>Share</Text>
                                 </Capsule>
 
-                                <Capsule>
+                                <Capsule backgroundColor={colors.background1}>
                                     <Ionicons name='save' color={colors.textA} />
                                     <Text style={{ color: colors.textA }}>Download</Text>
                                 </Capsule>
 
-                                <Capsule>
+                                <Capsule backgroundColor={colors.background1}>
                                     <Ionicons name='radio' color={colors.textA} />
                                     <Text style={{ color: colors.textA }}>Radio</Text>
                                 </Capsule>
@@ -282,11 +295,17 @@ const MusicPlayer = ({
 
                             {/* Controller */}
                             <Controller
-                                onShufflePress={() => { }}
+                                isPlaying={isPlaying}
+                                isShuffle={isShuffle}
+                                isRepeat={isRepeat}
+                                canSkipBack={canSkipBack}
+                                canSkipForward={canSkipForward}
+                                onShufflePress={toggleShuffle}
                                 onSkipBackPress={skipBack}
-                                onPlayPress={() => { }}
+                                onPlayPress={play}
+                                onPausePress={pause}
                                 onSkipForwardPress={skipForward}
-                                onRepeatPress={() => { }}
+                                onRepeatPress={toggleRepeat}
                             />
                         </Animated.View>
 
@@ -300,11 +319,14 @@ const MusicPlayer = ({
 
                     {/* Header */}
                     <Header
-                        onPress={expand}
                         track={currentTrack}
+                        isPlaying={isPlaying}
                         animation={headerAnimation}
                         albumAnimation={headerAlbumAnimation}
                         backgroundColor={headerColor}
+                        onHeaderPress={expand}
+                        onPlayPress={play}
+                        onPausePress={pause}
                     />
                 </Animated.View>
             </GestureDetector>
@@ -336,7 +358,6 @@ const bodyStyles = StyleSheet.create({
         marginVertical: h(20),
         paddingHorizontal: w(12),
         gap: w(8),
-        backgroundColor: colors.background0,
     },
     sheetTabContainer: {
         position: 'absolute',

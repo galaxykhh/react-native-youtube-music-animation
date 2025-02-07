@@ -3,4 +3,5 @@ export const colors = {
     background1: '#282828',
     textA: '#ffffff',
     textB: '#d9d9d9',
+    textC: '#999999',
 }

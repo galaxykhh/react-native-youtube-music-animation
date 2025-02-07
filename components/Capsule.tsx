@@ -1,11 +1,19 @@
 import { StyleSheet, View } from 'react-native';
-import { colors } from '../styles/colors';
 import { PropsWithChildren } from 'react';
 import { h, w } from '../styles/size';
 
-const Capsule = (props: PropsWithChildren) => {
+type Props = PropsWithChildren & {
+    backgroundColor: string;
+}
+
+const Capsule = (props: Props) => {
     return (
-        <View style={styles.container}>
+        <View
+            style={{
+                ...styles.container,
+                backgroundColor: props.backgroundColor,
+            }}
+        >
             {props.children}
         </View>
     );
@@ -19,7 +27,6 @@ const styles = StyleSheet.create({
         gap: w(4),
         paddingHorizontal: w(12),
         paddingVertical: h(8),
-        backgroundColor: colors.background1,
         borderRadius: 999,
     }
 });

@@ -1,19 +1,39 @@
 import { useCallback, useMemo } from 'react';
 import { useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { HEADER_HEIGHT, styles as headerStyles } from './Header';
-import { Extrapolation, interpolate, interpolateColor, runOnJS, useAnimatedStyle, useDerivedValue, useSharedValue, withTiming } from 'react-native-reanimated';
+import { Gesture, PanGesture } from 'react-native-gesture-handler';
+import { AnimatedStyle, Extrapolation, interpolate, interpolateColor, runOnJS, SharedValue, useAnimatedStyle, useDerivedValue, useSharedValue, withTiming } from 'react-native-reanimated';
 import { BODY_ALBUM_PADDING_HORIZONTAL, BODY_ALBUM_SIZE, EASING_BEZIER, FAST_VELOCITY_Y, PLAYER_ANIMATION_DURATION, SHEET_HEADER_HEIGHT } from './values';
+import { HEADER_HEIGHT, styles as headerStyles } from './Header';
 import { TOOLBAR_HEIGHT } from './Toolbar';
-import { Gesture } from 'react-native-gesture-handler';
 
 type UsePlayerAnimationOptions = {
     headerColor: string;
     bodyColor: string;
     bottomInsets?: number;
-}
+};
 
-export const usePlayerAnimation = (options: UsePlayerAnimationOptions) => {
+type UsePlayerAnimationHooks = {
+    maxOffsetY: number;
+    minOffsetY: number;
+    offsetY: SharedValue<number>;
+    sheetAnimation: AnimatedStyle;
+    playerAnimation: AnimatedStyle;
+    headerAnimation: AnimatedStyle;
+    headerAlbumAnimation: AnimatedStyle;
+    bodyHeaderAnimation: AnimatedStyle;
+    bodyContentAnimation: AnimatedStyle;
+    toolbarAnimation: AnimatedStyle;
+    bodyAlbumAnimation: AnimatedStyle;
+    tracksScrollAnimation: AnimatedStyle;
+    tracksScrollWrapperAnimations: AnimatedStyle;
+    collapse: () => void;
+    expand: () => void;
+    expandFully: () => void;
+    gesture: PanGesture;
+};
+
+export const usePlayerAnimation = (options: UsePlayerAnimationOptions): UsePlayerAnimationHooks => {
     const dimensions = useWindowDimensions();
     const safeAreaInsets = useSafeAreaInsets();
 
@@ -76,7 +96,7 @@ export const usePlayerAnimation = (options: UsePlayerAnimationOptions) => {
                 )
             }
         ]
-    }), []);
+    }), [options.bodyColor, options.headerColor, options.bottomInsets]);
 
     const playerAnimation = useAnimatedStyle(() => ({
         transform: [{ translateY: offsetY.value }],
@@ -130,6 +150,7 @@ export const usePlayerAnimation = (options: UsePlayerAnimationOptions) => {
 
     const toolbarAnimation = useAnimatedStyle(() => ({
         opacity: bodyOpacity.value,
+        backgroundColor: headerBackgroundColor.value,
     }), []);
 
     const bodyAlbumAnimation = useAnimatedStyle<{}>(() => {
@@ -160,9 +181,9 @@ export const usePlayerAnimation = (options: UsePlayerAnimationOptions) => {
                             maxOffsetY,
                         ],
                         [
-                            headerStyles.container.paddingHorizontal,
+                            headerStyles.trackContainer.paddingHorizontal,
                             BODY_ALBUM_PADDING_HORIZONTAL,
-                            headerStyles.container.paddingHorizontal,
+                            headerStyles.trackContainer.paddingHorizontal,
                         ],
                         Extrapolation.CLAMP,
                     )

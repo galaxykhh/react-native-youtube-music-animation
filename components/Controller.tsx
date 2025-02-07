@@ -1,10 +1,10 @@
 import { Pressable, StyleSheet, View } from 'react-native';
-import { h, sp } from '../styles/size';
+import { w, h, sp } from '../styles/size';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../styles/colors';
 import { BODY_ALBUM_PADDING_HORIZONTAL } from './values';
 
-const HIT_SLOP = 16;
+const HIT_SLOP = w(16);
 
 const iconSizes = {
     play: sp(75),
@@ -12,9 +12,15 @@ const iconSizes = {
 };
 
 export type ControllerProps = {
+    isPlaying: boolean;
+    isShuffle: boolean;
+    isRepeat: boolean;
+    canSkipBack: boolean;
+    canSkipForward: boolean;
     onShufflePress: () => void;
     onSkipBackPress: () => void;
     onPlayPress: () => void;
+    onPausePress: () => void;
     onSkipForwardPress: () => void;
     onRepeatPress: () => void;
 };
@@ -25,20 +31,20 @@ const Controller = (props: ControllerProps) => {
             <Pressable hitSlop={HIT_SLOP} onPress={props.onShufflePress}>
                 <Ionicons
                     name='shuffle'
-                    color={colors.textA}
+                    color={props.isShuffle ? colors.textA : colors.textC}
                     size={iconSizes.others}
                 />
             </Pressable>
             <Pressable hitSlop={HIT_SLOP} onPress={props.onSkipBackPress}>
                 <Ionicons
-                    name='play-skip-back'
-                    color={colors.textA}
+                    name={'play-skip-back'}
+                    color={props.canSkipBack ? colors.textA : colors.textC}
                     size={iconSizes.others}
                 />
             </Pressable>
-            <Pressable hitSlop={HIT_SLOP} onPress={props.onPlayPress}>
+            <Pressable hitSlop={HIT_SLOP} onPress={props.isPlaying ? props.onPausePress : props.onPlayPress}>
                 <Ionicons
-                    name='play-circle'
+                    name={props.isPlaying ? 'pause-circle' : 'play-circle'}
                     color={colors.textA}
                     size={iconSizes.play}
                 />
@@ -46,14 +52,14 @@ const Controller = (props: ControllerProps) => {
             <Pressable hitSlop={HIT_SLOP} onPress={props.onSkipForwardPress}>
                 <Ionicons
                     name='play-skip-forward'
-                    color={colors.textA}
+                    color={props.canSkipForward ? colors.textA : colors.textC}
                     size={iconSizes.others}
                 />
             </Pressable>
             <Pressable hitSlop={HIT_SLOP} onPress={props.onRepeatPress}>
                 <Ionicons
                     name='repeat'
-                    color={colors.textA}
+                    color={props.isRepeat ? colors.textA : colors.textC}
                     size={iconSizes.others}
                 />
             </Pressable>

@@ -7,10 +7,13 @@ import { w, h, sp } from '../styles/size';
 
 type HeaderProps = {
     track: Track;
+    isPlaying: boolean;
     animation: AnimatedStyle;
     albumAnimation: AnimatedStyle;
     backgroundColor: string;
-    onPress: () => void;
+    onHeaderPress: () => void;
+    onPlayPress: () => void;
+    onPausePress: () => void;
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -18,7 +21,7 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const Header = (props: HeaderProps) => {
     return (
         <AnimatedPressable
-            onPress={props.onPress}
+            onPress={props.onHeaderPress}
             style={[
                 props.animation,
                 {
@@ -27,22 +30,30 @@ const Header = (props: HeaderProps) => {
                 }
             ]}
         >
-            <Animated.Image
-                source={{ uri: props.track.cover.thumbnail }}
-                resizeMode='cover'
-                style={[props.albumAnimation, styles.album]}
-            />
-            <View style={styles.titleWithArtistContainer}>
-                <Text style={styles.title}>{props.track.title}</Text>
-                <Text style={styles.artist}>{props.track.artist}</Text>
-            </View>
-            <View style={styles.controllerContainer}>
-                <Ionicons
-                    name='play-sharp'
-                    size={sp(20)}
-                    color={colors.textA}
+            <View style={styles.trackContainer}>
+                <Animated.Image
+                    source={{ uri: props.track.cover.thumbnail }}
+                    resizeMode='cover'
+                    style={[props.albumAnimation, styles.album]}
                 />
+                <View style={styles.titleWithArtistContainer}>
+                    <Text style={styles.title}>{props.track.title}</Text>
+                    <Text style={styles.artist}>{props.track.artist}</Text>
+                </View>
+                <View style={styles.controllerContainer}>
+                    <Pressable
+                        onPress={props.isPlaying ? props.onPausePress : props.onPlayPress}
+                        hitSlop={w(20)}
+                    >
+                        <Ionicons
+                            name={props.isPlaying ? 'pause-sharp' : 'play-sharp'}
+                            size={sp(20)}
+                            color={colors.textA}
+                        />
+                    </Pressable>
+                </View>
             </View>
+            <View style={styles.progressBar} />
         </AnimatedPressable>
     );
 }
@@ -52,10 +63,15 @@ export const HEADER_HEIGHT = h(74);
 export const styles = StyleSheet.create({
     container: {
         position: 'absolute',
-        flexDirection: 'row',
-        alignItems: 'center',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
         width: '100%',
         height: HEADER_HEIGHT,
+    },
+    trackContainer: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
         gap: w(12),
         paddingHorizontal: w(8),
     },
@@ -84,6 +100,11 @@ export const styles = StyleSheet.create({
         alignItems: 'center',
         gap: w(12),
         paddingRight: w(12),
+    },
+    progressBar: {
+        width: '100%',
+        height: h(1),
+        backgroundColor: colors.textA,
     },
 });
 

@@ -8,7 +8,7 @@ import fixtures from './fixture/tracks.json';
 
 const Inner = () => {
   const insets = useSafeAreaInsets();
-  const [tracks, setTracks] = useState<Track[]>(fixtures);
+  const [tracks,] = useState<Track[]>(fixtures);
 
   return (
     <MusicPlayer
@@ -16,7 +16,7 @@ const Inner = () => {
       headerColor={colors.background1}
       bodyColor={colors.background0}
       bottomInsets={insets.bottom}
-      onStateChanged={state => console.log('current player state: ', state)}
+      onAnimationStateChanged={state => console.log('current animation state: ', state)}
     />
   );
 }

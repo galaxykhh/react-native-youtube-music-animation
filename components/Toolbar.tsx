@@ -18,7 +18,7 @@ const Toolbar = (props: Props) => {
         <Animated.View style={[props.animation, styles.container]}>
             <Pressable
                 onPress={props.onClosePress}
-                hitSlop={{ top: sp(16), bottom: sp(16), left: w(20), right: w(20) }}
+                hitSlop={{ top: h(16), bottom: h(16), left: w(20), right: w(20) }}
             >
                 <Ionicons
                     name='chevron-down-sharp'
