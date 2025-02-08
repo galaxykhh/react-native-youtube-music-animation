@@ -15,6 +15,7 @@ import { AnimationState, usePlayerAnimation } from './usePlayerAnimation';
 import { useTrack } from './useTrack';
 
 export type Track = {
+    id: number;
     title: string;
     artist: string;
     artwork: string;
@@ -38,8 +39,8 @@ export type MusicPlayerProps = {
 };
 
 export type MusicPlayerHandler = {
-    addTrack: (track: Track) => Promise<void>;
-    addTrackAndPlay: (track: Track) => Promise<void>;
+    playTrack: (track: Track) => Promise<void>;
+    playTracks: (tracks: Track[]) => Promise<void>;
 };
 
 const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
@@ -53,18 +54,17 @@ const MusicPlayer = forwardRef<MusicPlayerHandler, MusicPlayerProps>((
     ref,
 ) => {
     const {
+        playbackState,
         queue,
         index,
-        isPlaying,
         isShuffle,
         isRepeat,
         canSkipBack,
         canSkipForward,
-        setIndex,
-        addTrack,
-        addTrackAndPlay,
         play,
         pause,
+        playTrack,
+        playTracks,
         toggleShuffle,
         toggleRepeat,
         skip,
@@ -78,6 +78,7 @@ const MusicPlayer = forwardRef<MusicPlayerHandler, MusicPlayerProps>((
     // Animations
     const {
         animationState,
+        wrapperAnimation,
         sheetAnimation,
         playerAnimation,
         headerAnimation,
@@ -114,8 +115,11 @@ const MusicPlayer = forwardRef<MusicPlayerHandler, MusicPlayerProps>((
 
     const handleScrollEnd = useCallback((offset: number) => {
         const nextIndex = getIndexByScrollOffset(offset);
-        skip(nextIndex);
-    }, []);
+
+        if (index !== nextIndex) {
+            skip(nextIndex);
+        }
+    }, [index]);
 
     const renderTrack = useCallback(({ item }: ListRenderItemInfo<Track>) => {
         return (
@@ -143,13 +147,13 @@ const MusicPlayer = forwardRef<MusicPlayerHandler, MusicPlayerProps>((
     }, [index])
 
     useImperativeHandle(ref, () => ({
-        addTrack,
-        addTrackAndPlay,
+        playTrack,
+        playTracks,
     }));
 
     return (
         <GestureDetector gesture={gesture}>
-            <View style={styles.absolute}>
+            <Animated.View style={[wrapperAnimation, styles.wrapper]}>
                 {Boolean(queue.length) && (
                     <Animated.View
                         entering={SlideInDown}
@@ -196,7 +200,7 @@ const MusicPlayer = forwardRef<MusicPlayerHandler, MusicPlayerProps>((
                                     ref={scrollRef}
                                     data={queue}
                                     renderItem={renderTrack}
-                                    keyExtractor={(item, index) => item['url'] + index}
+                                    keyExtractor={(item, index) => item['id'] + index}
                                     getItemLayout={(_, index) => ({
                                         length: w(375),
                                         offset: w(375) * index,
@@ -261,7 +265,7 @@ const MusicPlayer = forwardRef<MusicPlayerHandler, MusicPlayerProps>((
 
                             {/* Controller */}
                             <Controller
-                                isPlaying={isPlaying}
+                                playbackState={playbackState}
                                 isShuffle={isShuffle}
                                 isRepeat={isRepeat}
                                 canSkipBack={canSkipBack}
@@ -278,7 +282,7 @@ const MusicPlayer = forwardRef<MusicPlayerHandler, MusicPlayerProps>((
                         {/* Header */}
                         <Header
                             track={currentTrack}
-                            isPlaying={isPlaying}
+                            playbackState={playbackState}
                             animation={headerAnimation}
                             albumAnimation={headerAlbumAnimation}
                             backgroundColor={headerColor}
@@ -296,13 +300,13 @@ const MusicPlayer = forwardRef<MusicPlayerHandler, MusicPlayerProps>((
                     </Animated.View>
 
                 )}
-            </View>
+            </Animated.View>
         </GestureDetector>
     );
 });
 
 const styles = StyleSheet.create({
-    absolute: {
+    wrapper: {
         position: 'absolute',
         pointerEvents: 'box-none',
         width: w(375),

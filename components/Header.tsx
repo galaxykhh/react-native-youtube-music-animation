@@ -4,14 +4,15 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { Track } from './MusicPlayer';
 import { colors } from '../styles/colors';
 import { w, h, sp } from '../styles/size';
+import { PlaybackState } from './useTrack';
 
 export const HEADER_HEIGHT = h(74);
 
 type HeaderProps = {
     track: Track;
-    isPlaying: boolean;
     animation: AnimatedStyle;
     albumAnimation: AnimatedStyle;
+    playbackState: PlaybackState;
     backgroundColor: string;
     onHeaderPress: () => void;
     onPlayPress: () => void;
@@ -44,11 +45,11 @@ const Header = (props: HeaderProps) => {
                 </View>
                 <View style={styles.controllerContainer}>
                     <Pressable
-                        onPress={props.isPlaying ? props.onPausePress : props.onPlayPress}
+                        onPress={props.playbackState === PlaybackState.playing ? props.onPausePress : props.onPlayPress}
                         hitSlop={w(20)}
                     >
                         <Ionicons
-                            name={props.isPlaying ? 'pause-sharp' : 'play-sharp'}
+                            name={props.playbackState === PlaybackState.playing ? 'pause-sharp' : 'play-sharp'}
                             size={sp(20)}
                             color={colors.textA}
                         />

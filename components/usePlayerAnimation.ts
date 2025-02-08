@@ -19,7 +19,8 @@ type UsePlayerAnimationOptions = {
 };
 
 type UsePlayerAnimationHooks = {
-    animationState: AnimationState,
+    animationState: AnimationState;
+    wrapperAnimation: AnimatedStyle;
     sheetAnimation: AnimatedStyle;
     playerAnimation: AnimatedStyle;
     headerAnimation: AnimatedStyle;
@@ -87,6 +88,15 @@ export const usePlayerAnimation = (options: UsePlayerAnimationOptions): UsePlaye
         [0, 1, 0],
         Extrapolation.CLAMP,
     ));
+
+    const wrapperAnimation = useAnimatedStyle(() => ({
+        backgroundColor: interpolateColor(
+            offsetY.value,
+            [maxOffsetY, 0],
+            [`${options.bodyColor}00`, options.bodyColor],
+            undefined,
+        ),
+    }), []);
 
     const sheetAnimation = useAnimatedStyle(() => {
         return {
@@ -322,6 +332,7 @@ export const usePlayerAnimation = (options: UsePlayerAnimationOptions): UsePlaye
 
     return {
         animationState,
+        wrapperAnimation,
         sheetAnimation,
         playerAnimation,
         headerAnimation,

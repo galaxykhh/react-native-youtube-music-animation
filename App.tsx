@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import TrackPlayer from 'react-native-track-player';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import Demo from './Demo';
+import Demo from './screens/Demo';
 
 export default function App() {
   const [isReady, setIsReady] = useState<boolean>(false);

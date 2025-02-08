@@ -3,6 +3,7 @@ import { w, h, sp } from '../styles/size';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../styles/colors';
 import { BODY_ALBUM_PADDING_HORIZONTAL } from './values';
+import { PlaybackState } from './useTrack';
 
 const HIT_SLOP = w(16);
 
@@ -12,7 +13,7 @@ const iconSizes = {
 };
 
 export type ControllerProps = {
-    isPlaying: boolean;
+    playbackState: PlaybackState;
     isShuffle: boolean;
     isRepeat: boolean;
     canSkipBack: boolean;
@@ -26,6 +27,7 @@ export type ControllerProps = {
 };
 
 const Controller = (props: ControllerProps) => {
+
     return (
         <View style={styles.container}>
             <Pressable hitSlop={HIT_SLOP} onPress={props.onShufflePress}>
@@ -42,9 +44,9 @@ const Controller = (props: ControllerProps) => {
                     size={iconSizes.others}
                 />
             </Pressable>
-            <Pressable hitSlop={HIT_SLOP} onPress={props.isPlaying ? props.onPausePress : props.onPlayPress}>
+            <Pressable hitSlop={HIT_SLOP} onPress={props.playbackState === PlaybackState.playing ? props.onPausePress : props.onPlayPress}>
                 <Ionicons
-                    name={props.isPlaying ? 'pause-circle' : 'play-circle'}
+                    name={props.playbackState === PlaybackState.playing ? 'pause-circle' : 'play-circle'}
                     color={colors.textA}
                     size={iconSizes.play}
                 />

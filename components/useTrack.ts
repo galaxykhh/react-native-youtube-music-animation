@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import TrackPlayer, { Event, useTrackPlayerEvents } from 'react-native-track-player';
 import { Track } from './MusicPlayer';
 
-enum PlaybackState {
+export enum PlaybackState {
     loading = 'loading',
     paused = 'paused',
     ready = 'ready',
@@ -11,19 +11,18 @@ enum PlaybackState {
     ended = 'ended',
 }
 
-type UseTrackHooks = {
+export type UseTrackHooks = {
     queue: Track[];
     index: number;
-    isPlaying: boolean;
+    playbackState: PlaybackState;
     isShuffle: boolean;
     isRepeat: boolean;
     canSkipBack: boolean;
     canSkipForward: boolean;
-    setIndex: (index: number) => void;
-    addTrack: (track: Track) => Promise<void>;
-    addTrackAndPlay: (track: Track) => Promise<void>;
     play: () => void;
     pause: () => void;
+    playTrack: (track: Track) => Promise<void>;
+    playTracks: (tracks: Track[]) => Promise<void>;
     toggleShuffle: () => void;
     toggleRepeat: () => void;
     skip: (index: number) => Promise<void>;
@@ -44,42 +43,42 @@ export const useTrack = (): UseTrackHooks => {
     const [isShuffle, setIsShuffle] = useState<boolean>(false);
     const [isRepeat, setIsRepeat] = useState<boolean>(false);
 
-    const isPlaying = playbackState === PlaybackState.playing;
     const canSkipBack = index > 0;
     const canSkipForward = index < queue.length - 1;
 
-    const play = async () => {
+    const play = useCallback(async () => {
         if (playbackState === PlaybackState.ended) {
             const index = await TrackPlayer.getActiveTrackIndex()
-            await TrackPlayer.skip(index);
+            await TrackPlayer.skip(index, 0);
         }
 
         TrackPlayer.play();
-    };
+    }, [playbackState]);
 
     const pause = useCallback(() => {
         TrackPlayer.pause();
     }, []);
 
-    const addTrack = async (track: Track) => {
+    const playTrack = async (track: Track) => {
         const currentQueue = await TrackPlayer.getQueue();
-        const isInQueue = currentQueue.some(t => t.url === track.url);
-        if (!isInQueue) {
-            await TrackPlayer.add(track);
-            setQueue(_ => [...currentQueue as Track[], track]);
-        }
-    };
 
-    const addTrackAndPlay = async (track: Track) => {
-        await addTrack(track);
-        await TrackPlayer.skipToNext();
+        if (currentQueue.length >= 1) {
+            await TrackPlayer.reset();
+        }
+
+        await TrackPlayer.add(track);
         play();
     };
 
+    const playTracks = async (tracks: Track[]) => {
+        await TrackPlayer.reset();
+        await TrackPlayer.add(tracks);
+
+        play();
+    }
+
     const skip = useCallback(async (index: number) => {
-        await TrackPlayer.skip(index);
-        setIndex(index);
-        TrackPlayer.play();
+        await TrackPlayer.skip(index, 0);
     }, []);
 
     const skipBack = useCallback(async () => {
@@ -121,16 +120,15 @@ export const useTrack = (): UseTrackHooks => {
     return {
         queue,
         index,
-        isPlaying,
+        playbackState,
         isShuffle,
         isRepeat,
         canSkipBack,
         canSkipForward,
-        setIndex,
-        addTrack,
-        addTrackAndPlay,
         play,
         pause,
+        playTrack,
+        playTracks,
         toggleShuffle,
         toggleRepeat,
         skip,
