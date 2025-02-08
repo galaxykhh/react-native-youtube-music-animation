@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { StyleSheet, Text, View, Image, ListRenderItemInfo } from 'react-native';
 import Animated, { runOnJS, SlideInDown, useAnimatedReaction } from 'react-native-reanimated';
 import { GestureDetector, FlatList, ScrollView } from 'react-native-gesture-handler';
@@ -12,7 +12,7 @@ import { BODY_ALBUM_PADDING_HORIZONTAL, BODY_ALBUM_SIZE } from './values';
 import { colors } from '../styles/colors';
 import { h, sp, w } from '../styles/size';
 import { usePlayerAnimation } from './usePlayerAnimation';
-import { usePlayerState } from './usePlayerState';
+import { useTrack } from './useTrack';
 
 type AnimationState =
     | 'collapsed'
@@ -29,33 +29,56 @@ export type Track = {
 }
 
 export type MusicPlayerProps = {
-    tracks: Track[];
     initialIndex?: number;
     headerColor?: string;
     bodyColor?: string;
+
+    /**
+     * Add spacing at the bottom in the collapsed state.
+     * Useful for setting an appropriate height when using a bottom navigation
+     */
     bottomInsets?: number;
+
     onAnimationStateChanged: (state: AnimationState) => void;
+};
+
+export type MusicPlayerHandler = {
+    addTrack: (track: Track) => Promise<void>;
+    addTrackAndPlay: (track: Track) => Promise<void>;
 };
 
 const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
 
-const MusicPlayer = ({
-    tracks,
-    initialIndex = 0,
-    headerColor = '#ffffff',
-    bodyColor = '#ffffff',
-    ...rest
-}: MusicPlayerProps) => {
+const MusicPlayer = forwardRef<MusicPlayerHandler, MusicPlayerProps>((
+    {
+        headerColor = '#ffffff',
+        bodyColor = '#ffffff',
+        ...rest
+    },
+    ref,
+) => {
+    const {
+        queue,
+        index,
+        isPlaying,
+        isShuffle,
+        isRepeat,
+        canSkipBack,
+        canSkipForward,
+        setIndex,
+        addTrack,
+        addTrackAndPlay,
+        play,
+        pause,
+        toggleShuffle,
+        toggleRepeat,
+        skip,
+        skipBack,
+        skipForward,
+    } = useTrack();
     const [playerState, setPlayerState] = useState<AnimationState>('collapsed');
-    const [index, setIndex] = useState<number>(initialIndex);
-    const currentTrack = tracks[index];
+    const currentTrack = queue[index];
     const scrollRef = useRef<FlatList>(null);
-
-    // Determines whether there is a previous track based on the currently playing track.
-    const canSkipBack = index > 0;
-
-    // Determines whether there is a next track based on the currently playing track.
-    const canSkipForward = index < tracks.length - 1
 
     // Animations
     const {
@@ -82,16 +105,6 @@ const MusicPlayer = ({
         bottomInsets: rest.bottomInsets,
     });
 
-    const {
-        isPlaying,
-        isShuffle,
-        isRepeat,
-        play,
-        pause,
-        toggleShuffle,
-        toggleRepeat,
-    } = usePlayerState();
-
     /** Returns the scroll offset based on the index */
     const getScrollOffsetByIndex = useCallback((index: number) => {
         return index * w(375);
@@ -106,35 +119,10 @@ const MusicPlayer = ({
         return operator(divided);
     }, []);
 
-    /** Moves to the previous track */
-    const skipBack = () => {
-        if (canSkipBack) {
-            setIndex(i => {
-                const nextIndex = i - 1;
-                scrollRef.current?.scrollToOffset({
-                    offset: getScrollOffsetByIndex(nextIndex),
-                    animated: false,
-                });
-
-                return nextIndex;
-            });
-        }
-    }
-
-    /** Moves to the next track */
-    const skipForward = () => {
-        if (canSkipForward) {
-            setIndex(i => {
-                const nextIndex = i + 1;
-                scrollRef.current?.scrollToOffset({
-                    offset: getScrollOffsetByIndex(nextIndex),
-                    animated: false,
-                });
-
-                return nextIndex;
-            });
-        }
-    }
+    const handleScrollEnd = useCallback((offset: number) => {
+        const nextIndex = getIndexByScrollOffset(offset);
+        skip(nextIndex);
+    }, []);
 
     const renderTrack = useCallback(({ item }: ListRenderItemInfo<Track>) => {
         return (
@@ -171,161 +159,176 @@ const MusicPlayer = ({
         rest.onAnimationStateChanged(playerState);
     }, [playerState]);
 
+    useEffect(() => {
+        scrollRef.current?.scrollToOffset({
+            offset: getScrollOffsetByIndex(index),
+            animated: false,
+        });
+    }, [index])
+
+    useImperativeHandle(ref, () => ({
+        addTrack,
+        addTrackAndPlay,
+    }));
+
     return (
         <GestureDetector gesture={gesture}>
             <View style={styles.absolute}>
-                <Animated.View
-                    entering={SlideInDown}
-                    style={playerAnimation}
-                >
-                    {/* Body Header */}
-                    <Animated.View style={
-                        [
-                            bodyHeaderAnimation,
-                            {
-                                ...headerStyles.container,
-                                position: 'static',
-                            }
-                        ]
-                    } />
+                {Boolean(queue.length) && (
+                    <Animated.View
+                        entering={SlideInDown}
+                        style={playerAnimation}
+                    >
+                        {/* Body Header */}
+                        <Animated.View style={
+                            [
+                                bodyHeaderAnimation,
+                                {
+                                    ...headerStyles.container,
+                                    position: 'static',
+                                }
+                            ]
+                        } />
 
-                    {/* Body Header Background */}
-                    < View style={{ backgroundColor: bodyColor, zIndex: 1 }}>
-                        {/* Toolbar */}
-                        <Toolbar
-                            animation={toolbarAnimation}
-                            onClosePress={collapse}
-                            actions={(
-                                <Ionicons
-                                    name='ellipsis-vertical'
-                                    size={sp(18)}
-                                    color={colors.textA}
+                        {/* Body Header Background */}
+                        < View style={{ backgroundColor: bodyColor, zIndex: 1 }}>
+                            {/* Toolbar */}
+                            <Toolbar
+                                animation={toolbarAnimation}
+                                onClosePress={collapse}
+                                actions={(
+                                    <Ionicons
+                                        name='ellipsis-vertical'
+                                        size={sp(18)}
+                                        color={colors.textA}
+                                    />
+                                )}
+                            />
+
+                            {/* Tracks Scroll Wrapper */}
+                            <Animated.View style={tracksScrollWrapperAnimations}>
+                                {/* Animated Album */}
+                                <Animated.Image
+                                    source={{ uri: currentTrack.artwork }}
+                                    resizeMode='cover'
+                                    style={[bodyAlbumAnimation, headerStyles.album]}
                                 />
-                            )}
-                        />
 
-                        {/* Tracks Scroll Wrapper */}
-                        <Animated.View style={tracksScrollWrapperAnimations}>
-                            {/* Animated Album */}
-                            <Animated.Image
-                                source={{ uri: currentTrack.artwork }}
-                                resizeMode='cover'
-                                style={[bodyAlbumAnimation, headerStyles.album]}
-                            />
-
-                            {/* Tracks Scroll View */}
-                            <AnimatedFlatList
-                                style={tracksScrollAnimation}
-                                ref={scrollRef}
-                                data={tracks}
-                                renderItem={renderTrack}
-                                keyExtractor={item => item['url']}
-                                getItemLayout={(_, index) => ({
-                                    length: w(375),
-                                    offset: w(375) * index,
-                                    index,
-                                })}
-                                initialScrollIndex={initialIndex}
-                                scrollEventThrottle={16}
-                                horizontal
-                                pagingEnabled
-                                showsHorizontalScrollIndicator={false}
-                                onMomentumScrollEnd={e => setIndex(getIndexByScrollOffset(e.nativeEvent.contentOffset.x))}
-                            />
-                        </Animated.View>
-                    </View>
-
-                    {/* Body */}
-                    <Animated.View style={[bodyAnimation, styles.body]}>
-                        <View style={{ paddingHorizontal: BODY_ALBUM_PADDING_HORIZONTAL }}>
-                            <Text style={styles.title}>{currentTrack.title}</Text>
-                            <Text style={styles.artist}>{currentTrack.artist}</Text>
+                                {/* Tracks Scroll View */}
+                                <AnimatedFlatList
+                                    style={tracksScrollAnimation}
+                                    ref={scrollRef}
+                                    data={queue}
+                                    renderItem={renderTrack}
+                                    keyExtractor={(item, index) => item['url'] + index}
+                                    getItemLayout={(_, index) => ({
+                                        length: w(375),
+                                        offset: w(375) * index,
+                                        index,
+                                    })}
+                                    scrollEventThrottle={16}
+                                    horizontal
+                                    pagingEnabled
+                                    showsHorizontalScrollIndicator={false}
+                                    onMomentumScrollEnd={e => handleScrollEnd(e.nativeEvent.contentOffset.x)}
+                                />
+                            </Animated.View>
                         </View>
 
-                        {/* Actions Container */}
-                        <ScrollView
-                            horizontal
-                            style={{ flexGrow: 0 }}
-                            showsHorizontalScrollIndicator={false}
-                            contentContainerStyle={styles.actionsContainer}
-                        >
-                            <Capsule backgroundColor={colors.background1}>
-                                <Ionicons name='thumbs-up' color={colors.textA} />
-                                <Text style={{ color: colors.textA }}>5588</Text>
-                            </Capsule>
+                        {/* Body */}
+                        <Animated.View style={[bodyAnimation, styles.body]}>
+                            <View style={{ paddingHorizontal: BODY_ALBUM_PADDING_HORIZONTAL }}>
+                                <Text style={styles.title}>{currentTrack.title}</Text>
+                                <Text style={styles.artist}>{currentTrack.artist}</Text>
+                            </View>
 
-                            <Capsule backgroundColor={colors.background1}>
-                                <Ionicons name='mail' color={colors.textA} />
-                                <Text style={{ color: colors.textA }}>30</Text>
-                            </Capsule>
+                            {/* Actions Container */}
+                            <ScrollView
+                                horizontal
+                                style={{ flexGrow: 0 }}
+                                showsHorizontalScrollIndicator={false}
+                                contentContainerStyle={styles.actionsContainer}
+                            >
+                                <Capsule backgroundColor={colors.background1}>
+                                    <Ionicons name='thumbs-up' color={colors.textA} />
+                                    <Text style={{ color: colors.textA }}>5588</Text>
+                                </Capsule>
 
-                            <Capsule backgroundColor={colors.background1}>
-                                <Ionicons name='add' color={colors.textA} />
-                                <Text style={{ color: colors.textA }}>Save</Text>
-                            </Capsule>
+                                <Capsule backgroundColor={colors.background1}>
+                                    <Ionicons name='mail' color={colors.textA} />
+                                    <Text style={{ color: colors.textA }}>30</Text>
+                                </Capsule>
 
-                            <Capsule backgroundColor={colors.background1}>
-                                <Ionicons name='share-social' color={colors.textA} />
-                                <Text style={{ color: colors.textA }}>Share</Text>
-                            </Capsule>
+                                <Capsule backgroundColor={colors.background1}>
+                                    <Ionicons name='add' color={colors.textA} />
+                                    <Text style={{ color: colors.textA }}>Save</Text>
+                                </Capsule>
 
-                            <Capsule backgroundColor={colors.background1}>
-                                <Ionicons name='save' color={colors.textA} />
-                                <Text style={{ color: colors.textA }}>Download</Text>
-                            </Capsule>
+                                <Capsule backgroundColor={colors.background1}>
+                                    <Ionicons name='share-social' color={colors.textA} />
+                                    <Text style={{ color: colors.textA }}>Share</Text>
+                                </Capsule>
 
-                            <Capsule backgroundColor={colors.background1}>
-                                <Ionicons name='radio' color={colors.textA} />
-                                <Text style={{ color: colors.textA }}>Radio</Text>
-                            </Capsule>
-                        </ScrollView>
+                                <Capsule backgroundColor={colors.background1}>
+                                    <Ionicons name='save' color={colors.textA} />
+                                    <Text style={{ color: colors.textA }}>Download</Text>
+                                </Capsule>
 
-                        {/* Progress Bar */}
-                        <ProgressBar />
+                                <Capsule backgroundColor={colors.background1}>
+                                    <Ionicons name='radio' color={colors.textA} />
+                                    <Text style={{ color: colors.textA }}>Radio</Text>
+                                </Capsule>
+                            </ScrollView>
 
-                        {/* Controller */}
-                        <Controller
+                            {/* Progress Bar */}
+                            <ProgressBar />
+
+                            {/* Controller */}
+                            <Controller
+                                isPlaying={isPlaying}
+                                isShuffle={isShuffle}
+                                isRepeat={isRepeat}
+                                canSkipBack={canSkipBack}
+                                canSkipForward={canSkipForward}
+                                onShufflePress={toggleShuffle}
+                                onSkipBackPress={skipBack}
+                                onPlayPress={play}
+                                onPausePress={pause}
+                                onSkipForwardPress={skipForward}
+                                onRepeatPress={toggleRepeat}
+                            />
+                        </Animated.View>
+
+                        {/* Header */}
+                        <Header
+                            track={currentTrack}
                             isPlaying={isPlaying}
-                            isShuffle={isShuffle}
-                            isRepeat={isRepeat}
-                            canSkipBack={canSkipBack}
-                            canSkipForward={canSkipForward}
-                            onShufflePress={toggleShuffle}
-                            onSkipBackPress={skipBack}
+                            animation={headerAnimation}
+                            albumAnimation={headerAlbumAnimation}
+                            backgroundColor={headerColor}
+                            onHeaderPress={expand}
                             onPlayPress={play}
                             onPausePress={pause}
-                            onSkipForwardPress={skipForward}
-                            onRepeatPress={toggleRepeat}
                         />
+
+                        {/* Sheet */}
+                        <Animated.View style={[styles.sheetTabContainer, sheetAnimation]}>
+                            <Text style={styles.tab}>UP NEXT</Text>
+                            <Text style={styles.tab}>LYRICS</Text>
+                            <Text style={styles.tab}>RELATED</Text>
+                        </Animated.View>
                     </Animated.View>
 
-                    {/* Header */}
-                    <Header
-                        track={currentTrack}
-                        isPlaying={isPlaying}
-                        animation={headerAnimation}
-                        albumAnimation={headerAlbumAnimation}
-                        backgroundColor={headerColor}
-                        onHeaderPress={expand}
-                        onPlayPress={play}
-                        onPausePress={pause}
-                    />
-
-                    {/* Sheet */}
-                    <Animated.View style={[styles.sheetTabContainer, sheetAnimation]}>
-                        <Text style={styles.tab}>UP NEXT</Text>
-                        <Text style={styles.tab}>LYRICS</Text>
-                        <Text style={styles.tab}>RELATED</Text>
-                    </Animated.View>
-                </Animated.View>
+                )}
             </View>
         </GestureDetector>
     );
-}
+});
 
 const styles = StyleSheet.create({
     absolute: {
         position: 'absolute',
+        pointerEvents: 'box-none',
         width: w(375),
         height: h(812),
     },

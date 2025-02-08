@@ -1,24 +1,27 @@
 import { useState } from 'react';
-import { StyleSheet, Text } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Button, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import MusicPlayer, { Track } from './components/MusicPlayer';
 import fixtures from './fixture/tracks.json';
 import { colors } from './styles/colors';
+import { useMusicPlayerRef } from './components/useMusicPlayerRef';
 
 const Demo = () => {
-    const insets = useSafeAreaInsets();
-    const [tracks,] = useState<Track[]>(fixtures);
+    const [remoteTracks,] = useState<Track[]>(fixtures);
+    const ref = useMusicPlayerRef();
 
     return (
         <SafeAreaView style={styles.container}>
-            <Text style={{ color: 'white' }}>Hello</Text>
-            <Text style={{ color: 'white' }}>Hello</Text>
-            <Text style={{ color: 'white' }}>Hello</Text>
+            {[0, 1, 2, 3, 4].map(i => (
+                <Button key={i} title='ADD' onPress={() => {
+                    ref.current?.addTrackAndPlay(remoteTracks[i])
+                }} />
+            ))}
+            <Button title='ADD2' onPress={() => console.log('HELLO')} />
             <MusicPlayer
-                tracks={tracks}
+                ref={ref}
                 headerColor={colors.background1}
                 bodyColor={colors.background0}
-                bottomInsets={insets.bottom}
                 onAnimationStateChanged={state => console.log('current animation state: ', state)}
             />
         </SafeAreaView>

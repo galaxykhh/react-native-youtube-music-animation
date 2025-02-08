@@ -46,16 +46,16 @@ export const usePlayerAnimation = (options: UsePlayerAnimationOptions): UsePlaye
      * maximum value indicates the [collapsed] state.
      */
     const maxOffsetY = useMemo(() => {
-        return dimensions.height - HEADER_HEIGHT - options.bottomInsets;
-    }, [dimensions.height, options.bottomInsets]);
+        return dimensions.height - HEADER_HEIGHT - safeAreaInsets.bottom - (options.bottomInsets ?? 0);
+    }, [dimensions.height, safeAreaInsets.bottom, options.bottomInsets]);
 
     /**
      * The minimum value of offset Y.
      * minimum value indicates the [fullyExpanded] state.
      */
     const minOffsetY = useMemo(() => {
-        return -1 * (dimensions.height - HEADER_HEIGHT - safeAreaInsets.top - SHEET_HEADER_HEIGHT + options.bottomInsets);
-    }, [dimensions.height, safeAreaInsets.top]);
+        return -1 * (dimensions.height - HEADER_HEIGHT - safeAreaInsets.top - SHEET_HEADER_HEIGHT + safeAreaInsets.bottom);
+    }, [dimensions.height, safeAreaInsets.top, safeAreaInsets.bottom]);
 
     const offsetY = useSharedValue<number>(maxOffsetY);
 
@@ -95,13 +95,13 @@ export const usePlayerAnimation = (options: UsePlayerAnimationOptions): UsePlaye
                 offsetY.value,
                 [minOffsetY, 0],
                 [
-                    dimensions.height + options.bottomInsets - SHEET_HEADER_HEIGHT,
-                    maxOffsetY,
+                    dimensions.height + safeAreaInsets.bottom - SHEET_HEADER_HEIGHT,
+                    maxOffsetY + (options.bottomInsets ?? 0),
                 ],
                 Extrapolation.CLAMP,
             ),
         };
-    }, [options.bodyColor, options.headerColor, options.bottomInsets]);
+    }, [options.bodyColor, options.headerColor, safeAreaInsets.bottom]);
 
     const playerAnimation = useAnimatedStyle(() => ({
         transform: [{ translateY: offsetY.value }],
@@ -271,7 +271,6 @@ export const usePlayerAnimation = (options: UsePlayerAnimationOptions): UsePlaye
     const gesture = Gesture.Pan()
         .onChange(event => {
             const delta = event.changeY + offsetY.value;
-            console.log(delta);
             offsetY.value = delta > maxOffsetY
                 ? maxOffsetY
                 : delta < minOffsetY
