@@ -1,6 +1,6 @@
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef } from 'react';
 import { StyleSheet, Text, View, Image, ListRenderItemInfo } from 'react-native';
-import Animated, { runOnJS, SlideInDown, useAnimatedReaction } from 'react-native-reanimated';
+import Animated, { SlideInDown } from 'react-native-reanimated';
 import { GestureDetector, FlatList, ScrollView } from 'react-native-gesture-handler';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import Header, { styles as headerStyles } from './Header';
@@ -11,13 +11,8 @@ import ProgressBar from './ProgressBar';
 import { BODY_ALBUM_PADDING_HORIZONTAL, BODY_ALBUM_SIZE } from './values';
 import { colors } from '../styles/colors';
 import { h, sp, w } from '../styles/size';
-import { usePlayerAnimation } from './usePlayerAnimation';
+import { AnimationState, usePlayerAnimation } from './usePlayerAnimation';
 import { useTrack } from './useTrack';
-
-type AnimationState =
-    | 'collapsed'
-    | 'expanded'
-    | 'fullyExpanded';
 
 export type Track = {
     title: string;
@@ -76,15 +71,13 @@ const MusicPlayer = forwardRef<MusicPlayerHandler, MusicPlayerProps>((
         skipBack,
         skipForward,
     } = useTrack();
-    const [playerState, setPlayerState] = useState<AnimationState>('collapsed');
+
     const currentTrack = queue[index];
     const scrollRef = useRef<FlatList>(null);
 
     // Animations
     const {
-        maxOffsetY,
-        minOffsetY,
-        offsetY,
+        animationState,
         sheetAnimation,
         playerAnimation,
         headerAnimation,
@@ -136,29 +129,12 @@ const MusicPlayer = forwardRef<MusicPlayerHandler, MusicPlayerProps>((
         );
     }, []);
 
-    // Reaction: Set player state by offsetY
-    useAnimatedReaction(
-        () => offsetY,
-        (offsetY) => {
-            if (offsetY.value === minOffsetY) {
-                return runOnJS(setPlayerState)('fullyExpanded');
-            }
-
-            if (offsetY.value === 0) {
-                return runOnJS(setPlayerState)('expanded');
-            }
-
-            if (offsetY.value === maxOffsetY) {
-                return runOnJS(setPlayerState)('collapsed');
-            }
-        },
-    );
-
     // Effect: onAnimationStateChanged callback
     useEffect(() => {
-        rest.onAnimationStateChanged(playerState);
-    }, [playerState]);
+        rest.onAnimationStateChanged(animationState);
+    }, [animationState]);
 
+    // Effect: set scroll offset by index
     useEffect(() => {
         scrollRef.current?.scrollToOffset({
             offset: getScrollOffsetByIndex(index),

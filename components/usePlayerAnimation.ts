@@ -1,11 +1,16 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Gesture, PanGesture } from 'react-native-gesture-handler';
-import { AnimatedStyle, Extrapolation, interpolate, interpolateColor, runOnJS, SharedValue, useAnimatedStyle, useDerivedValue, useSharedValue, withTiming } from 'react-native-reanimated';
+import { AnimatedStyle, Extrapolation, interpolate, interpolateColor, runOnJS, useAnimatedReaction, useAnimatedStyle, useDerivedValue, useSharedValue, withTiming } from 'react-native-reanimated';
 import { BODY_ALBUM_PADDING_HORIZONTAL, BODY_ALBUM_SIZE, EASING_BEZIER, FAST_VELOCITY_Y, PLAYER_ANIMATION_DURATION, SHEET_HEADER_HEIGHT } from './values';
 import { HEADER_HEIGHT, styles as headerStyles } from './Header';
 import { TOOLBAR_HEIGHT } from './Toolbar';
+
+export type AnimationState =
+    | 'collapsed'
+    | 'expanded'
+    | 'fullyExpanded';
 
 type UsePlayerAnimationOptions = {
     headerColor: string;
@@ -14,9 +19,7 @@ type UsePlayerAnimationOptions = {
 };
 
 type UsePlayerAnimationHooks = {
-    maxOffsetY: number;
-    minOffsetY: number;
-    offsetY: SharedValue<number>;
+    animationState: AnimationState,
     sheetAnimation: AnimatedStyle;
     playerAnimation: AnimatedStyle;
     headerAnimation: AnimatedStyle;
@@ -36,6 +39,8 @@ type UsePlayerAnimationHooks = {
 export const usePlayerAnimation = (options: UsePlayerAnimationOptions): UsePlayerAnimationHooks => {
     const dimensions = useWindowDimensions();
     const safeAreaInsets = useSafeAreaInsets();
+
+    const [animationState, setAnimationState] = useState<AnimationState>('collapsed');
 
     const sheetHeight = useMemo(() => {
         return dimensions.height - HEADER_HEIGHT - safeAreaInsets.top;
@@ -297,11 +302,26 @@ export const usePlayerAnimation = (options: UsePlayerAnimationOptions): UsePlaye
             runOnJS(shouldExpandFully ? expandFully : shouldExpand ? expand : collapse)();
         });
 
+    // Reaction: Set player state by offsetY
+    useAnimatedReaction(
+        () => offsetY,
+        (offsetY) => {
+            if (offsetY.value === minOffsetY) {
+                return runOnJS(setAnimationState)('fullyExpanded');
+            }
+
+            if (offsetY.value === 0) {
+                return runOnJS(setAnimationState)('expanded');
+            }
+
+            if (offsetY.value === maxOffsetY) {
+                return runOnJS(setAnimationState)('collapsed');
+            }
+        },
+    );
 
     return {
-        maxOffsetY,
-        minOffsetY,
-        offsetY,
+        animationState,
         sheetAnimation,
         playerAnimation,
         headerAnimation,

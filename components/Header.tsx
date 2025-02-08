@@ -55,7 +55,7 @@ const Header = (props: HeaderProps) => {
                     </Pressable>
                 </View>
             </View>
-            <View style={styles.progressBar} />
+            {/* <View style={styles.progressBar} /> */}
         </AnimatedPressable>
     );
 }
