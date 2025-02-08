@@ -5,6 +5,8 @@ import { Track } from './MusicPlayer';
 import { colors } from '../styles/colors';
 import { w, h, sp } from '../styles/size';
 
+export const HEADER_HEIGHT = h(74);
+
 type HeaderProps = {
     track: Track;
     isPlaying: boolean;
@@ -32,7 +34,7 @@ const Header = (props: HeaderProps) => {
         >
             <View style={styles.trackContainer}>
                 <Animated.Image
-                    source={{ uri: props.track.cover.thumbnail }}
+                    source={{ uri: props.track.artworkThumbnail }}
                     resizeMode='cover'
                     style={[props.albumAnimation, styles.album]}
                 />
@@ -57,8 +59,6 @@ const Header = (props: HeaderProps) => {
         </AnimatedPressable>
     );
 }
-
-export const HEADER_HEIGHT = h(74);
 
 export const styles = StyleSheet.create({
     container: {
@@ -103,7 +103,7 @@ export const styles = StyleSheet.create({
     },
     progressBar: {
         width: '100%',
-        height: h(1),
+        height: 1,
         backgroundColor: colors.textA,
     },
 });

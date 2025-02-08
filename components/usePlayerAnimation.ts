@@ -22,7 +22,7 @@ type UsePlayerAnimationHooks = {
     headerAnimation: AnimatedStyle;
     headerAlbumAnimation: AnimatedStyle;
     bodyHeaderAnimation: AnimatedStyle;
-    bodyContentAnimation: AnimatedStyle;
+    bodyAnimation: AnimatedStyle;
     toolbarAnimation: AnimatedStyle;
     bodyAlbumAnimation: AnimatedStyle;
     tracksScrollAnimation: AnimatedStyle;
@@ -67,10 +67,14 @@ export const usePlayerAnimation = (options: UsePlayerAnimationOptions): UsePlaye
 
     const headerHeight = useDerivedValue(() => interpolate(
         offsetY.value,
-        [minOffsetY, 0, maxOffsetY],
+        [-TOOLBAR_HEIGHT * 3, 0, maxOffsetY],
         [HEADER_HEIGHT, safeAreaInsets.top, HEADER_HEIGHT],
         Extrapolation.CLAMP,
     ));
+
+    const bodyHeight = useMemo(() => {
+        return dimensions.height - safeAreaInsets.top - TOOLBAR_HEIGHT - BODY_ALBUM_SIZE;
+    }, [dimensions.height, safeAreaInsets.top]);
 
     const bodyOpacity = useDerivedValue(() => interpolate(
         offsetY.value,
@@ -79,24 +83,25 @@ export const usePlayerAnimation = (options: UsePlayerAnimationOptions): UsePlaye
         Extrapolation.CLAMP,
     ));
 
-    const sheetAnimation = useAnimatedStyle(() => ({
-        backgroundColor: interpolateColor(
-            offsetY.value,
-            [0, minOffsetY],
-            [options.bodyColor, options.headerColor],
-        ),
-        bottom: -1 * (dimensions.height - HEADER_HEIGHT - safeAreaInsets.top + options.bottomInsets - SHEET_HEADER_HEIGHT),
-        height: sheetHeight,
-        transform: [
-            {
-                translateY: interpolate(
-                    offsetY.value,
-                    [0, minOffsetY],
-                    [-1 * options.bottomInsets, 0],
-                )
-            }
-        ]
-    }), [options.bodyColor, options.headerColor, options.bottomInsets]);
+    const sheetAnimation = useAnimatedStyle(() => {
+        return {
+            backgroundColor: interpolateColor(
+                offsetY.value,
+                [minOffsetY, 0],
+                [options.headerColor, options.bodyColor],
+            ),
+            height: sheetHeight,
+            top: interpolate(
+                offsetY.value,
+                [minOffsetY, 0],
+                [
+                    dimensions.height + options.bottomInsets - SHEET_HEADER_HEIGHT,
+                    maxOffsetY,
+                ],
+                Extrapolation.CLAMP,
+            ),
+        };
+    }, [options.bodyColor, options.headerColor, options.bottomInsets]);
 
     const playerAnimation = useAnimatedStyle(() => ({
         transform: [{ translateY: offsetY.value }],
@@ -107,7 +112,7 @@ export const usePlayerAnimation = (options: UsePlayerAnimationOptions): UsePlaye
             backgroundColor: headerBackgroundColor.value,
             opacity: interpolate(
                 offsetY.value,
-                [minOffsetY, 0, maxOffsetY],
+                [-TOOLBAR_HEIGHT, 0, maxOffsetY],
                 [1, 0, 1],
                 Extrapolation.CLAMP,
             ),
@@ -134,8 +139,10 @@ export const usePlayerAnimation = (options: UsePlayerAnimationOptions): UsePlaye
         height: headerHeight.value,
     }), []);
 
-    const bodyContentAnimation = useAnimatedStyle(() => ({
+    const bodyAnimation = useAnimatedStyle(() => ({
         opacity: bodyOpacity.value,
+        height: bodyHeight,
+        backgroundColor: options.bodyColor,
         transform: [
             {
                 translateY: interpolate(
@@ -149,8 +156,24 @@ export const usePlayerAnimation = (options: UsePlayerAnimationOptions): UsePlaye
     }), []);
 
     const toolbarAnimation = useAnimatedStyle(() => ({
-        opacity: bodyOpacity.value,
+        opacity: interpolate(
+            offsetY.value,
+            [-TOOLBAR_HEIGHT, 0, maxOffsetY],
+            [0, 1, 0],
+            Extrapolation.CLAMP,
+        ),
+        pointerEvents: offsetY.value === 0 ? 'auto' : 'none',
         backgroundColor: headerBackgroundColor.value,
+        transform: [
+            {
+                translateY: interpolate(
+                    offsetY.value,
+                    [minOffsetY, 0],
+                    [-minOffsetY, 0],
+                    Extrapolation.CLAMP,
+                )
+            }
+        ]
     }), []);
 
     const bodyAlbumAnimation = useAnimatedStyle<{}>(() => {
@@ -214,6 +237,7 @@ export const usePlayerAnimation = (options: UsePlayerAnimationOptions): UsePlaye
             [minOffsetY, 0, maxOffsetY],
             [0, BODY_ALBUM_SIZE, 0],
         ),
+        backgroundColor: options.bodyColor,
     }), []);
 
     const tracksScrollAnimation = useAnimatedStyle(() => ({
@@ -247,6 +271,7 @@ export const usePlayerAnimation = (options: UsePlayerAnimationOptions): UsePlaye
     const gesture = Gesture.Pan()
         .onChange(event => {
             const delta = event.changeY + offsetY.value;
+            console.log(delta);
             offsetY.value = delta > maxOffsetY
                 ? maxOffsetY
                 : delta < minOffsetY
@@ -283,7 +308,7 @@ export const usePlayerAnimation = (options: UsePlayerAnimationOptions): UsePlaye
         headerAnimation,
         headerAlbumAnimation,
         bodyHeaderAnimation,
-        bodyContentAnimation,
+        bodyAnimation,
         toolbarAnimation,
         bodyAlbumAnimation,
         tracksScrollAnimation,

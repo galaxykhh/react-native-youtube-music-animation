@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View, Image, ListRenderItemInfo } from 'react-native';
-import Animated, { runOnJS, useAnimatedReaction } from 'react-native-reanimated';
+import Animated, { runOnJS, SlideInDown, useAnimatedReaction } from 'react-native-reanimated';
 import { GestureDetector, FlatList, ScrollView } from 'react-native-gesture-handler';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import Header, { styles as headerStyles } from './Header';
@@ -19,15 +19,13 @@ type AnimationState =
     | 'expanded'
     | 'fullyExpanded';
 
-export type TrackCover = {
-    thumbnail: string;
-    main: string;
-};
-
 export type Track = {
     title: string;
     artist: string;
-    cover: TrackCover;
+    artwork: string;
+    artworkThumbnail: string;
+    url: string;
+    duration: number;
 }
 
 export type MusicPlayerProps = {
@@ -69,7 +67,7 @@ const MusicPlayer = ({
         headerAnimation,
         headerAlbumAnimation,
         bodyHeaderAnimation,
-        bodyContentAnimation,
+        bodyAnimation,
         toolbarAnimation,
         bodyAlbumAnimation,
         tracksScrollAnimation,
@@ -142,7 +140,7 @@ const MusicPlayer = ({
         return (
             <View style={{ width: w(375), alignItems: 'center' }}>
                 <Image
-                    source={{ uri: item.cover.main }}
+                    source={{ uri: item.artwork }}
                     resizeMode='cover'
                     style={{ width: BODY_ALBUM_SIZE, height: BODY_ALBUM_SIZE }}
                 />
@@ -174,21 +172,25 @@ const MusicPlayer = ({
     }, [playerState]);
 
     return (
-        <>
-            <GestureDetector gesture={gesture}>
-                <Animated.View style={{ ...playerAnimation, ...styles.container }}>
+        <GestureDetector gesture={gesture}>
+            <View style={styles.absolute}>
+                <Animated.View
+                    entering={SlideInDown}
+                    style={playerAnimation}
+                >
                     {/* Body Header */}
-                    <Animated.View
-                        style={{
-                            ...bodyHeaderAnimation,
-                            ...headerStyles.container,
-                            position: 'static',
-                        }}
-                    />
+                    <Animated.View style={
+                        [
+                            bodyHeaderAnimation,
+                            {
+                                ...headerStyles.container,
+                                position: 'static',
+                            }
+                        ]
+                    } />
 
                     {/* Body Header Background */}
-                    <View style={{ backgroundColor: bodyColor, zIndex: 1 }}>
-
+                    < View style={{ backgroundColor: bodyColor, zIndex: 1 }}>
                         {/* Toolbar */}
                         <Toolbar
                             animation={toolbarAnimation}
@@ -206,13 +208,9 @@ const MusicPlayer = ({
                         <Animated.View style={tracksScrollWrapperAnimations}>
                             {/* Animated Album */}
                             <Animated.Image
-                                source={{ uri: currentTrack.cover.main }}
+                                source={{ uri: currentTrack.artwork }}
                                 resizeMode='cover'
-                                style={[
-                                    bodyAlbumAnimation,
-                                    {
-                                        ...headerStyles.album,
-                                    }]}
+                                style={[bodyAlbumAnimation, headerStyles.album]}
                             />
 
                             {/* Tracks Scroll View */}
@@ -221,7 +219,7 @@ const MusicPlayer = ({
                                 ref={scrollRef}
                                 data={tracks}
                                 renderItem={renderTrack}
-                                keyExtractor={(item, index) => item['title'] + index}
+                                keyExtractor={item => item['url']}
                                 getItemLayout={(_, index) => ({
                                     length: w(375),
                                     offset: w(375) * index,
@@ -238,84 +236,68 @@ const MusicPlayer = ({
                     </View>
 
                     {/* Body */}
-                    <View
-                        style={[
-                            {
-                                ...bodyStyles.container,
-                                backgroundColor: bodyColor,
-                                paddingTop: h(20),
-                            }
-                        ]}>
-                        <Animated.View style={bodyContentAnimation}>
-                            <View style={{ paddingHorizontal: BODY_ALBUM_PADDING_HORIZONTAL }}>
-                                <Text style={bodyStyles.title}>{currentTrack.title}</Text>
-                                <Text style={bodyStyles.artist}>{currentTrack.artist}</Text>
-                            </View>
+                    <Animated.View style={[bodyAnimation, styles.body]}>
+                        <View style={{ paddingHorizontal: BODY_ALBUM_PADDING_HORIZONTAL }}>
+                            <Text style={styles.title}>{currentTrack.title}</Text>
+                            <Text style={styles.artist}>{currentTrack.artist}</Text>
+                        </View>
 
-                            {/* Actions Container */}
-                            <ScrollView
-                                horizontal
-                                style={{ flexGrow: 0 }}
-                                showsHorizontalScrollIndicator={false}
-                                contentContainerStyle={bodyStyles.actionsContainer}
-                            >
-                                <Capsule backgroundColor={colors.background1}>
-                                    <Ionicons name='thumbs-up' color={colors.textA} />
-                                    <Text style={{ color: colors.textA }}>5588</Text>
-                                </Capsule>
+                        {/* Actions Container */}
+                        <ScrollView
+                            horizontal
+                            style={{ flexGrow: 0 }}
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={styles.actionsContainer}
+                        >
+                            <Capsule backgroundColor={colors.background1}>
+                                <Ionicons name='thumbs-up' color={colors.textA} />
+                                <Text style={{ color: colors.textA }}>5588</Text>
+                            </Capsule>
 
-                                <Capsule backgroundColor={colors.background1}>
-                                    <Ionicons name='mail' color={colors.textA} />
-                                    <Text style={{ color: colors.textA }}>30</Text>
-                                </Capsule>
+                            <Capsule backgroundColor={colors.background1}>
+                                <Ionicons name='mail' color={colors.textA} />
+                                <Text style={{ color: colors.textA }}>30</Text>
+                            </Capsule>
 
-                                <Capsule backgroundColor={colors.background1}>
-                                    <Ionicons name='add' color={colors.textA} />
-                                    <Text style={{ color: colors.textA }}>Save</Text>
-                                </Capsule>
+                            <Capsule backgroundColor={colors.background1}>
+                                <Ionicons name='add' color={colors.textA} />
+                                <Text style={{ color: colors.textA }}>Save</Text>
+                            </Capsule>
 
-                                <Capsule backgroundColor={colors.background1}>
-                                    <Ionicons name='share-social' color={colors.textA} />
-                                    <Text style={{ color: colors.textA }}>Share</Text>
-                                </Capsule>
+                            <Capsule backgroundColor={colors.background1}>
+                                <Ionicons name='share-social' color={colors.textA} />
+                                <Text style={{ color: colors.textA }}>Share</Text>
+                            </Capsule>
 
-                                <Capsule backgroundColor={colors.background1}>
-                                    <Ionicons name='save' color={colors.textA} />
-                                    <Text style={{ color: colors.textA }}>Download</Text>
-                                </Capsule>
+                            <Capsule backgroundColor={colors.background1}>
+                                <Ionicons name='save' color={colors.textA} />
+                                <Text style={{ color: colors.textA }}>Download</Text>
+                            </Capsule>
 
-                                <Capsule backgroundColor={colors.background1}>
-                                    <Ionicons name='radio' color={colors.textA} />
-                                    <Text style={{ color: colors.textA }}>Radio</Text>
-                                </Capsule>
-                            </ScrollView>
+                            <Capsule backgroundColor={colors.background1}>
+                                <Ionicons name='radio' color={colors.textA} />
+                                <Text style={{ color: colors.textA }}>Radio</Text>
+                            </Capsule>
+                        </ScrollView>
 
-                            {/* Progress Bar */}
-                            <ProgressBar />
+                        {/* Progress Bar */}
+                        <ProgressBar />
 
-                            {/* Controller */}
-                            <Controller
-                                isPlaying={isPlaying}
-                                isShuffle={isShuffle}
-                                isRepeat={isRepeat}
-                                canSkipBack={canSkipBack}
-                                canSkipForward={canSkipForward}
-                                onShufflePress={toggleShuffle}
-                                onSkipBackPress={skipBack}
-                                onPlayPress={play}
-                                onPausePress={pause}
-                                onSkipForwardPress={skipForward}
-                                onRepeatPress={toggleRepeat}
-                            />
-                        </Animated.View>
-
-                        {/* Sheet */}
-                        <Animated.View style={[bodyStyles.sheetTabContainer, sheetAnimation]}>
-                            <Text style={bodyStyles.tab}>UP NEXT</Text>
-                            <Text style={bodyStyles.tab}>LYRICS</Text>
-                            <Text style={bodyStyles.tab}>RELATED</Text>
-                        </Animated.View>
-                    </View>
+                        {/* Controller */}
+                        <Controller
+                            isPlaying={isPlaying}
+                            isShuffle={isShuffle}
+                            isRepeat={isRepeat}
+                            canSkipBack={canSkipBack}
+                            canSkipForward={canSkipForward}
+                            onShufflePress={toggleShuffle}
+                            onSkipBackPress={skipBack}
+                            onPlayPress={play}
+                            onPausePress={pause}
+                            onSkipForwardPress={skipForward}
+                            onRepeatPress={toggleRepeat}
+                        />
+                    </Animated.View>
 
                     {/* Header */}
                     <Header
@@ -328,16 +310,27 @@ const MusicPlayer = ({
                         onPlayPress={play}
                         onPausePress={pause}
                     />
+
+                    {/* Sheet */}
+                    <Animated.View style={[styles.sheetTabContainer, sheetAnimation]}>
+                        <Text style={styles.tab}>UP NEXT</Text>
+                        <Text style={styles.tab}>LYRICS</Text>
+                        <Text style={styles.tab}>RELATED</Text>
+                    </Animated.View>
                 </Animated.View>
-            </GestureDetector>
-        </>
+            </View>
+        </GestureDetector>
     );
 }
 
-const bodyStyles = StyleSheet.create({
-    container: {
-        flex: 1,
-        alignItems: 'flex-start',
+const styles = StyleSheet.create({
+    absolute: {
+        position: 'absolute',
+        width: w(375),
+        height: h(812),
+    },
+    body: {
+        paddingTop: h(24),
     },
     title: {
         fontSize: sp(24),
@@ -351,9 +344,7 @@ const bodyStyles = StyleSheet.create({
         color: colors.textB,
     },
     actionsContainer: {
-        flexGrow: 0,
         alignItems: 'center',
-        alignSelf: 'stretch',
         height: h(50),
         marginVertical: h(20),
         paddingHorizontal: w(12),
@@ -373,16 +364,6 @@ const bodyStyles = StyleSheet.create({
         color: colors.textB,
         fontWeight: 600,
     }
-});
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        position: 'absolute',
-        width: '100%',
-        height: '100%',
-        bottom: 0,
-    },
 });
 
 export default MusicPlayer;
