@@ -34,3 +34,9 @@ yarn-error.*
 
 # typescript
 *.tsbuildinfo
+
+# audios
+audios/*.mp3
+
+# data
+data/*.ts

@@ -1,6 +1,6 @@
-import { StyleSheet, View } from 'react-native';
 import { PropsWithChildren } from 'react';
-import { h, w } from '../styles/size';
+import { StyleSheet, View } from 'react-native';
+import { h, w } from '../../styles/size';
 
 type Props = PropsWithChildren & {
     backgroundColor: string;

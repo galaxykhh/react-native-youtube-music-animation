@@ -3,16 +3,16 @@ import { StyleSheet, Text, View, Image, ListRenderItemInfo } from 'react-native'
 import Animated, { SlideInDown } from 'react-native-reanimated';
 import { GestureDetector, FlatList, ScrollView } from 'react-native-gesture-handler';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import Header, { styles as headerStyles } from './Header';
-import Capsule from './Capsule';
-import Controller from './Controller';
-import Toolbar from './Toolbar';
-import ProgressBar from './ProgressBar';
 import { BODY_ALBUM_PADDING_HORIZONTAL, BODY_ALBUM_SIZE } from './values';
 import { colors } from '../styles/colors';
 import { h, sp, w } from '../styles/size';
-import { AnimationState, usePlayerAnimation } from './usePlayerAnimation';
-import { useTrack } from './useTrack';
+import { AnimationState, usePlayerAnimation } from './hooks/usePlayerAnimation';
+import { useTrack } from './hooks/useTrack';
+import Header, { styles as headerStyles } from './components/Header';
+import Capsule from './components/Capsule';
+import Controller from './components/Controller';
+import Toolbar from './components/Toolbar';
+import ProgressBar from './components/ProgressBar';
 
 export type Track = {
     id: number;
@@ -21,7 +21,6 @@ export type Track = {
     artwork: string;
     artworkThumbnail: string;
     url: string;
-    duration: number;
 }
 
 export type MusicPlayerProps = {
@@ -61,6 +60,9 @@ const MusicPlayer = forwardRef<MusicPlayerHandler, MusicPlayerProps>((
         isRepeat,
         canSkipBack,
         canSkipForward,
+        duration,
+        buffered,
+        position,
         play,
         pause,
         playTrack,
@@ -85,6 +87,7 @@ const MusicPlayer = forwardRef<MusicPlayerHandler, MusicPlayerProps>((
         headerAlbumAnimation,
         bodyHeaderAnimation,
         bodyAnimation,
+        bodyContentAnimation,
         toolbarAnimation,
         bodyAlbumAnimation,
         tracksScrollAnimation,
@@ -217,75 +220,91 @@ const MusicPlayer = forwardRef<MusicPlayerHandler, MusicPlayerProps>((
 
                         {/* Body */}
                         <Animated.View style={[bodyAnimation, styles.body]}>
-                            <View style={{ paddingHorizontal: BODY_ALBUM_PADDING_HORIZONTAL }}>
-                                <Text style={styles.title}>{currentTrack.title}</Text>
-                                <Text style={styles.artist}>{currentTrack.artist}</Text>
-                            </View>
+                            <Animated.View style={bodyContentAnimation}>
+                                <View style={{ paddingHorizontal: BODY_ALBUM_PADDING_HORIZONTAL }}>
+                                    <Text style={styles.title}>{currentTrack.title}</Text>
+                                    <Text style={styles.artist}>{currentTrack.artist}</Text>
+                                </View>
 
-                            {/* Actions Container */}
-                            <ScrollView
-                                horizontal
-                                style={{ flexGrow: 0 }}
-                                showsHorizontalScrollIndicator={false}
-                                contentContainerStyle={styles.actionsContainer}
-                            >
-                                <Capsule backgroundColor={colors.background1}>
-                                    <Ionicons name='thumbs-up' color={colors.textA} />
-                                    <Text style={{ color: colors.textA }}>5588</Text>
-                                </Capsule>
+                                {/* Actions Container */}
+                                <ScrollView
+                                    horizontal
+                                    style={{ flexGrow: 0 }}
+                                    showsHorizontalScrollIndicator={false}
+                                    contentContainerStyle={styles.actionsContainer}
+                                >
+                                    <Capsule backgroundColor={colors.background1}>
+                                        <Ionicons name='thumbs-up' color={colors.textA} />
+                                        <Text style={{ color: colors.textA }}>5588</Text>
+                                    </Capsule>
 
-                                <Capsule backgroundColor={colors.background1}>
-                                    <Ionicons name='mail' color={colors.textA} />
-                                    <Text style={{ color: colors.textA }}>30</Text>
-                                </Capsule>
+                                    <Capsule backgroundColor={colors.background1}>
+                                        <Ionicons name='mail' color={colors.textA} />
+                                        <Text style={{ color: colors.textA }}>30</Text>
+                                    </Capsule>
 
-                                <Capsule backgroundColor={colors.background1}>
-                                    <Ionicons name='add' color={colors.textA} />
-                                    <Text style={{ color: colors.textA }}>Save</Text>
-                                </Capsule>
+                                    <Capsule backgroundColor={colors.background1}>
+                                        <Ionicons name='add' color={colors.textA} />
+                                        <Text style={{ color: colors.textA }}>Save</Text>
+                                    </Capsule>
 
-                                <Capsule backgroundColor={colors.background1}>
-                                    <Ionicons name='share-social' color={colors.textA} />
-                                    <Text style={{ color: colors.textA }}>Share</Text>
-                                </Capsule>
+                                    <Capsule backgroundColor={colors.background1}>
+                                        <Ionicons name='share-social' color={colors.textA} />
+                                        <Text style={{ color: colors.textA }}>Share</Text>
+                                    </Capsule>
 
-                                <Capsule backgroundColor={colors.background1}>
-                                    <Ionicons name='save' color={colors.textA} />
-                                    <Text style={{ color: colors.textA }}>Download</Text>
-                                </Capsule>
+                                    <Capsule backgroundColor={colors.background1}>
+                                        <Ionicons name='save' color={colors.textA} />
+                                        <Text style={{ color: colors.textA }}>Download</Text>
+                                    </Capsule>
 
-                                <Capsule backgroundColor={colors.background1}>
-                                    <Ionicons name='radio' color={colors.textA} />
-                                    <Text style={{ color: colors.textA }}>Radio</Text>
-                                </Capsule>
-                            </ScrollView>
+                                    <Capsule backgroundColor={colors.background1}>
+                                        <Ionicons name='radio' color={colors.textA} />
+                                        <Text style={{ color: colors.textA }}>Radio</Text>
+                                    </Capsule>
+                                </ScrollView>
 
-                            {/* Progress Bar */}
-                            <ProgressBar />
+                                {/* Progress Bar */}
+                                <ProgressBar
+                                    height={h(2)}
+                                    width={BODY_ALBUM_SIZE}
+                                    duration={duration}
+                                    buffered={buffered}
+                                    position={position}
+                                />
 
-                            {/* Controller */}
-                            <Controller
-                                playbackState={playbackState}
-                                isShuffle={isShuffle}
-                                isRepeat={isRepeat}
-                                canSkipBack={canSkipBack}
-                                canSkipForward={canSkipForward}
-                                onShufflePress={toggleShuffle}
-                                onSkipBackPress={skipBack}
-                                onPlayPress={play}
-                                onPausePress={pause}
-                                onSkipForwardPress={skipForward}
-                                onRepeatPress={toggleRepeat}
-                            />
+                                {/* Controller */}
+                                <Controller
+                                    playbackState={playbackState}
+                                    isShuffle={isShuffle}
+                                    isRepeat={isRepeat}
+                                    canSkipBack={canSkipBack}
+                                    canSkipForward={canSkipForward}
+                                    onShufflePress={toggleShuffle}
+                                    onSkipBackPress={skipBack}
+                                    onPlayPress={play}
+                                    onPausePress={pause}
+                                    onSkipForwardPress={skipForward}
+                                    onRepeatPress={toggleRepeat}
+                                />
+                            </Animated.View>
                         </Animated.View>
 
                         {/* Header */}
                         <Header
                             track={currentTrack}
+                            animationState={animationState}
                             playbackState={playbackState}
                             animation={headerAnimation}
                             albumAnimation={headerAlbumAnimation}
                             backgroundColor={headerColor}
+                            progress={{
+                                height: h(1),
+                                width: w(375),
+                                duration: duration,
+                                buffered: buffered,
+                                position: position,
+                            }}
                             onHeaderPress={expand}
                             onPlayPress={play}
                             onPausePress={pause}

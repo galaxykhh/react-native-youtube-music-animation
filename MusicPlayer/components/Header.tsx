@@ -1,10 +1,12 @@
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import Animated, { AnimatedStyle } from 'react-native-reanimated';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Track } from './MusicPlayer';
-import { colors } from '../styles/colors';
-import { w, h, sp } from '../styles/size';
-import { PlaybackState } from './useTrack';
+import { Track } from '..';
+import { colors } from '../../styles/colors';
+import { w, h, sp } from '../../styles/size';
+import { PlaybackState } from '../hooks/useTrack';
+import ProgressBar, { ProgressBarProps } from './ProgressBar';
+import { AnimationState } from '../hooks/usePlayerAnimation';
 
 export const HEADER_HEIGHT = h(74);
 
@@ -12,8 +14,10 @@ type HeaderProps = {
     track: Track;
     animation: AnimatedStyle;
     albumAnimation: AnimatedStyle;
+    animationState: AnimationState;
     playbackState: PlaybackState;
     backgroundColor: string;
+    progress: ProgressBarProps;
     onHeaderPress: () => void;
     onPlayPress: () => void;
     onPausePress: () => void;
@@ -56,7 +60,7 @@ const Header = (props: HeaderProps) => {
                     </Pressable>
                 </View>
             </View>
-            {/* <View style={styles.progressBar} /> */}
+            {props.animationState === 'collapsed' && <ProgressBar {...props.progress} />}
         </AnimatedPressable>
     );
 }

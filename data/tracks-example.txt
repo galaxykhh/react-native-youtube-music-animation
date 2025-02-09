@@ -1,0 +1,44 @@
+import { Track } from '../MusicPlayer';
+
+export const tracks: Track[] = [
+    {
+        id: 1,
+        title: "Song 1",
+        artist: "Artist 1",
+        artwork: "https://example-artwork/1.jpg",
+        artworkThumbnail: "https://example-artwork-thumbnail/1.jpg",
+        url: require("../audios/audio1.mp3"),
+    },
+    {
+        id: 2,
+        title: "Song 2",
+        artist: "Artist 2",
+        artwork: "https://example-artwork/2.jpg",
+        artworkThumbnail: "https://example-artwork-thumbnail/2.jpg",
+        url: require("../audios/audio2.mp3"),
+    },
+    {
+        id: 3,
+        title: "Song 3",
+        artist: "Artist 3",
+        artwork: "https://example-artwork/3.jpg",
+        artworkThumbnail: "https://example-artwork-thumbnail/3.jpg",
+        url: require("../audios/audio3.mp3"),
+    },
+    {
+        id: 4,
+        title: "Song 4",
+        artist: "Artist 4",
+        artwork: "https://example-artwork/4.jpg",
+        artworkThumbnail: "https://example-artwork-thumbnail/4.jpg",
+        url: require("../audios/audio4.mp3"),
+    },
+    {
+        id: 5,
+        title: "Song 5",
+        artist: "Artist 5",
+        artwork: "https://example-artwork/5.jpg",
+        artworkThumbnail: "https://example-artwork-thumbnail/5.jpg",
+        url: require("../audios/audio5.mp3"),
+    },
+]

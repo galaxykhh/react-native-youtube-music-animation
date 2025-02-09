@@ -3,9 +3,9 @@ import { useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Gesture, PanGesture } from 'react-native-gesture-handler';
 import { AnimatedStyle, Extrapolation, interpolate, interpolateColor, runOnJS, useAnimatedReaction, useAnimatedStyle, useDerivedValue, useSharedValue, withTiming } from 'react-native-reanimated';
-import { BODY_ALBUM_PADDING_HORIZONTAL, BODY_ALBUM_SIZE, EASING_BEZIER, FAST_VELOCITY_Y, PLAYER_ANIMATION_DURATION, SHEET_HEADER_HEIGHT } from './values';
-import { HEADER_HEIGHT, styles as headerStyles } from './Header';
-import { TOOLBAR_HEIGHT } from './Toolbar';
+import { BODY_ALBUM_PADDING_HORIZONTAL, BODY_ALBUM_SIZE, EASING_BEZIER, FAST_VELOCITY_Y, PLAYER_ANIMATION_DURATION, SHEET_HEADER_HEIGHT } from '../values';
+import { HEADER_HEIGHT, styles as headerStyles } from '../components/Header';
+import { TOOLBAR_HEIGHT } from '../components/Toolbar';
 
 export type AnimationState =
     | 'collapsed'
@@ -27,6 +27,7 @@ type UsePlayerAnimationHooks = {
     headerAlbumAnimation: AnimatedStyle;
     bodyHeaderAnimation: AnimatedStyle;
     bodyAnimation: AnimatedStyle;
+    bodyContentAnimation: AnimatedStyle;
     toolbarAnimation: AnimatedStyle;
     bodyAlbumAnimation: AnimatedStyle;
     tracksScrollAnimation: AnimatedStyle;
@@ -82,13 +83,6 @@ export const usePlayerAnimation = (options: UsePlayerAnimationOptions): UsePlaye
         return dimensions.height - safeAreaInsets.top - TOOLBAR_HEIGHT - BODY_ALBUM_SIZE;
     }, [dimensions.height, safeAreaInsets.top]);
 
-    const bodyOpacity = useDerivedValue(() => interpolate(
-        offsetY.value,
-        [minOffsetY, 0, maxOffsetY],
-        [0, 1, 0],
-        Extrapolation.CLAMP,
-    ));
-
     const wrapperAnimation = useAnimatedStyle(() => ({
         backgroundColor: interpolateColor(
             offsetY.value,
@@ -127,8 +121,8 @@ export const usePlayerAnimation = (options: UsePlayerAnimationOptions): UsePlaye
             backgroundColor: headerBackgroundColor.value,
             opacity: interpolate(
                 offsetY.value,
-                [-TOOLBAR_HEIGHT, 0, maxOffsetY],
-                [1, 0, 1],
+                [-safeAreaInsets.top * 3, -safeAreaInsets.top, 0, maxOffsetY],
+                [1, 0, 0, 1],
                 Extrapolation.CLAMP,
             ),
             height: headerHeight.value,
@@ -155,7 +149,6 @@ export const usePlayerAnimation = (options: UsePlayerAnimationOptions): UsePlaye
     }), []);
 
     const bodyAnimation = useAnimatedStyle(() => ({
-        opacity: bodyOpacity.value,
         height: bodyHeight,
         backgroundColor: options.bodyColor,
         transform: [
@@ -168,6 +161,15 @@ export const usePlayerAnimation = (options: UsePlayerAnimationOptions): UsePlaye
                 )
             }
         ],
+    }), []);
+
+    const bodyContentAnimation = useAnimatedStyle(() => ({
+        opacity: interpolate(
+            offsetY.value,
+            [minOffsetY, 0, maxOffsetY],
+            [0, 1, 0],
+            Extrapolation.CLAMP,
+        )
     }), []);
 
     const toolbarAnimation = useAnimatedStyle(() => ({
@@ -339,6 +341,7 @@ export const usePlayerAnimation = (options: UsePlayerAnimationOptions): UsePlaye
         headerAlbumAnimation,
         bodyHeaderAnimation,
         bodyAnimation,
+        bodyContentAnimation,
         toolbarAnimation,
         bodyAlbumAnimation,
         tracksScrollAnimation,

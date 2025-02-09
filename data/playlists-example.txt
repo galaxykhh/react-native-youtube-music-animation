@@ -1,0 +1,28 @@
+import tracks from 'tracks.ts';
+
+export const playlists = [
+    {
+        id: 1,
+        title: "Playlist 1",
+        artwork: "https://example-artwork/1.jpg",
+        tracks,
+    },
+    {
+        id: 2,
+        title: "Playlist 2",
+        artwork: "https://example-artwork/2.jpg",
+        tracks,
+    },
+    {
+        id: 3,
+        title: "Playlist 3",
+        artwork: "https://example-artwork/3.jpg",
+        tracks,
+    },
+    {
+        id: 4,
+        title: "Playlist 4",
+        artwork: "https://example-artwork/4.jpg",
+        tracks,
+    }
+]

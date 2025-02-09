@@ -1,9 +1,9 @@
 import { Pressable, StyleSheet, View } from 'react-native';
-import { w, h, sp } from '../styles/size';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../styles/colors';
-import { BODY_ALBUM_PADDING_HORIZONTAL } from './values';
-import { PlaybackState } from './useTrack';
+import { w, h, sp } from '../../styles/size';
+import { colors } from '../../styles/colors';
+import { BODY_ALBUM_PADDING_HORIZONTAL } from '../values';
+import { PlaybackState } from '../hooks/useTrack';
 
 const HIT_SLOP = w(16);
 

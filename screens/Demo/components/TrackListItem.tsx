@@ -1,5 +1,5 @@
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
-import { Track } from '../../../components/MusicPlayer';
+import { Track } from '../../../MusicPlayer';
 import { w, h, sp } from '../../../styles/size';
 import { colors } from '../../../styles/colors';
 
@@ -35,6 +35,7 @@ const styles = StyleSheet.create({
     },
     titleWithArtistContainer: {
         height: h(36),
+        gap: h(2),
     },
     artwork: {
         width: w(40),

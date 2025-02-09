@@ -1,9 +1,9 @@
 import React, { ReactNode } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { AnimatedStyle } from 'react-native-reanimated';
-import { w, h, sp } from '../styles/size';
-import { colors } from '../styles/colors';
 import { Ionicons } from '@expo/vector-icons';
+import { w, h, sp } from '../../styles/size';
+import { colors } from '../../styles/colors';
 
 export const TOOLBAR_HEIGHT = h(50);
 

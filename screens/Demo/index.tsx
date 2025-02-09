@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import MusicPlayer, { Track } from '../../components/MusicPlayer';
-import { useMusicPlayerRef } from '../../components/useMusicPlayerRef';
+import MusicPlayer, { Track } from '../../MusicPlayer';
+import { useMusicPlayerRef } from '../../MusicPlayer/hooks/useMusicPlayerRef';
 import { colors } from '../../styles/colors';
-import tracks from '../../fixture/tracks.json';
-import playlists from '../../fixture/playlists.json';
 import TrackListItem from './components/TrackListItem';
 import { h, sp, w } from '../../styles/size';
 import PlaylistListItem from './components/PlaylistListItem';
+import { tracks } from '../../data/tracks';
+import { playlists } from '../../data/playlists';
 
 export type Playlist = {
     id: number;

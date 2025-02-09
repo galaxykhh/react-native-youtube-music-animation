@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
-import TrackPlayer, { Event, useTrackPlayerEvents } from 'react-native-track-player';
-import { Track } from './MusicPlayer';
+import TrackPlayer, { Event, useProgress, useTrackPlayerEvents } from 'react-native-track-player';
+import { Track } from '..';
 
 export enum PlaybackState {
     loading = 'loading',
@@ -19,6 +19,9 @@ export type UseTrackHooks = {
     isRepeat: boolean;
     canSkipBack: boolean;
     canSkipForward: boolean;
+    duration: number;
+    buffered: number;
+    position: number;
     play: () => void;
     pause: () => void;
     playTrack: (track: Track) => Promise<void>;
@@ -42,8 +45,10 @@ export const useTrack = (): UseTrackHooks => {
     const [playbackState, setPlaybackState] = useState<PlaybackState>(PlaybackState.loading);
     const [isShuffle, setIsShuffle] = useState<boolean>(false);
     const [isRepeat, setIsRepeat] = useState<boolean>(false);
+    const { duration, buffered, position } = useProgress();
 
     const canSkipBack = index > 0;
+
     const canSkipForward = index < queue.length - 1;
 
     const play = useCallback(async () => {
@@ -125,6 +130,9 @@ export const useTrack = (): UseTrackHooks => {
         isRepeat,
         canSkipBack,
         canSkipForward,
+        duration,
+        buffered,
+        position,
         play,
         pause,
         playTrack,

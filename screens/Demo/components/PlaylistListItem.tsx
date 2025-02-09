@@ -38,6 +38,7 @@ const styles = StyleSheet.create({
         fontSize: sp(14),
         fontWeight: 'semibold',
         color: colors.textA,
+
     },
     trackCount: {
         fontSize: sp(12),
