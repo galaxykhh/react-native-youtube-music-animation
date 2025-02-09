@@ -1,8 +1,9 @@
-## React Native YT Music Player Clone
+## React Native YT Music Player Animation Clone
 
 ### Demo
 
-https://github.com/user-attachments/assets/da8124a8-caf4-44de-b3c4-c6f702fffb24
+https://github.com/user-attachments/assets/5ce07331-1a53-4bc6-9c5e-8af2dccc6b9e
+
 
 ### 📌 How to Try
 
