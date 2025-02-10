@@ -1,8 +1,6 @@
-import { useRef } from 'react';
+import { MutableRefObject, useRef } from 'react';
 import { MusicPlayerHandler } from '..';
 
-export const useMusicPlayerRef = () => {
-    const ref = useRef<MusicPlayerHandler>();
+type UseMusicPlayerRefHooks = MutableRefObject<MusicPlayerHandler>;
 
-    return ref;
-}
+export const useMusicPlayerRef = (): UseMusicPlayerRefHooks => useRef<MusicPlayerHandler>();

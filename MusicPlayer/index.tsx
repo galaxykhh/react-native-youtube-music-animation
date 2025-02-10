@@ -116,7 +116,8 @@ const MusicPlayer = forwardRef<MusicPlayerHandler, MusicPlayerProps>((
         return operator(divided);
     }, []);
 
-    const handleScrollEnd = useCallback((offset: number) => {
+    /** Handles skipping to the next track when the scroll end */
+    const skipTrackOnScrollEnd = useCallback((offset: number) => {
         const nextIndex = getIndexByScrollOffset(offset);
 
         if (index !== nextIndex) {
@@ -126,11 +127,11 @@ const MusicPlayer = forwardRef<MusicPlayerHandler, MusicPlayerProps>((
 
     const renderTrack = useCallback(({ item }: ListRenderItemInfo<Track>) => {
         return (
-            <View style={{ width: w(375), alignItems: 'center' }}>
+            <View style={styles.trackContainer}>
                 <Image
                     source={{ uri: item.artwork }}
                     resizeMode='cover'
-                    style={{ width: BODY_ALBUM_SIZE, height: BODY_ALBUM_SIZE }}
+                    style={styles.track}
                 />
             </View>
         );
@@ -213,7 +214,7 @@ const MusicPlayer = forwardRef<MusicPlayerHandler, MusicPlayerProps>((
                                     horizontal
                                     pagingEnabled
                                     showsHorizontalScrollIndicator={false}
-                                    onMomentumScrollEnd={e => handleScrollEnd(e.nativeEvent.contentOffset.x)}
+                                    onMomentumScrollEnd={e => skipTrackOnScrollEnd(e.nativeEvent.contentOffset.x)}
                                 />
                             </Animated.View>
                         </View>
@@ -333,6 +334,14 @@ const styles = StyleSheet.create({
     },
     body: {
         paddingTop: h(24),
+    },
+    trackContainer: {
+        width: w(375),
+        alignItems: 'center',
+    },
+    track: {
+        width: BODY_ALBUM_SIZE,
+        height: BODY_ALBUM_SIZE,
     },
     title: {
         fontSize: sp(24),

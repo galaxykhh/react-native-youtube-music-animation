@@ -2,11 +2,11 @@ import { PropsWithChildren } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { h, w } from '../../styles/size';
 
-type Props = PropsWithChildren & {
+type CapsuleProps = PropsWithChildren & {
     backgroundColor: string;
 }
 
-const Capsule = (props: Props) => {
+const Capsule = (props: CapsuleProps) => {
     return (
         <View
             style={{

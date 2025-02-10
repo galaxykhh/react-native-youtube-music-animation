@@ -49,7 +49,7 @@ export const usePlayerAnimation = (options: UsePlayerAnimationOptions): UsePlaye
     }, [dimensions.height, safeAreaInsets.top]);
 
     /**
-     * The maximum value of offsetY.
+     * The maximum value of offset Y.
      * maximum value indicates the [collapsed] state.
      */
     const maxOffsetY = useMemo(() => {
@@ -64,6 +64,7 @@ export const usePlayerAnimation = (options: UsePlayerAnimationOptions): UsePlaye
         return -1 * (dimensions.height - HEADER_HEIGHT - safeAreaInsets.top - SHEET_HEADER_HEIGHT + safeAreaInsets.bottom);
     }, [dimensions.height, safeAreaInsets.top, safeAreaInsets.bottom]);
 
+    /** Current offset Y */
     const offsetY = useSharedValue<number>(maxOffsetY);
 
     const headerBackgroundColor = useDerivedValue(() => interpolateColor(
@@ -264,6 +265,7 @@ export const usePlayerAnimation = (options: UsePlayerAnimationOptions): UsePlaye
         backgroundColor: headerBackgroundColor.value,
     }), []);
 
+    /** Collapses the music player to the threshold where it enters the [collapsed] state. */
     const collapse = useCallback(() => {
         offsetY.value = withTiming(maxOffsetY, {
             easing: EASING_BEZIER,
@@ -271,6 +273,7 @@ export const usePlayerAnimation = (options: UsePlayerAnimationOptions): UsePlaye
         });
     }, []);
 
+    /** Expands the music player to the threshold where it enters the [expanded] state. */
     const expand = useCallback(() => {
         offsetY.value = withTiming(0, {
             easing: EASING_BEZIER,
@@ -278,6 +281,7 @@ export const usePlayerAnimation = (options: UsePlayerAnimationOptions): UsePlaye
         });
     }, []);
 
+    /** Expands the music player to the threshold where it enters the [fullyExpanded] state. */
     const expandFully = useCallback(() => {
         offsetY.value = withTiming(minOffsetY, {
             easing: EASING_BEZIER,

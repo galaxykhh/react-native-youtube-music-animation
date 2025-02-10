@@ -88,7 +88,7 @@ export const styles = StyleSheet.create({
     titleWithArtistContainer: {
         flex: 1,
         justifyContent: 'center',
-        rowGap: 4,
+        rowGap: h(4),
     },
     title: {
         fontSize: sp(14),
@@ -105,11 +105,6 @@ export const styles = StyleSheet.create({
         alignItems: 'center',
         gap: w(12),
         paddingRight: w(12),
-    },
-    progressBar: {
-        width: '100%',
-        height: 1,
-        backgroundColor: colors.textA,
     },
 });
 
