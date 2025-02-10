@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { w, h, sp } from '../../styles/size';
 import { colors } from '../../styles/colors';
-import { BODY_ALBUM_PADDING_HORIZONTAL } from '../values';
+import { BODY_ARTWORK_PADDING_HORIZONTAL } from '../values';
 import { PlaybackState } from '../hooks/useTrack';
 
 const HIT_SLOP = w(16);
@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingHorizontal: BODY_ALBUM_PADDING_HORIZONTAL,
+        paddingHorizontal: BODY_ARTWORK_PADDING_HORIZONTAL,
         paddingTop: h(16),
     }
 });

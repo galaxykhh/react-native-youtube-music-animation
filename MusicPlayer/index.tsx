@@ -3,7 +3,7 @@ import { StyleSheet, Text, View, Image, ListRenderItemInfo } from 'react-native'
 import Animated, { SlideInDown } from 'react-native-reanimated';
 import { GestureDetector, FlatList, ScrollView } from 'react-native-gesture-handler';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { BODY_ALBUM_PADDING_HORIZONTAL, BODY_ALBUM_SIZE } from './values';
+import { BODY_ARTWORK_PADDING_HORIZONTAL, BODY_ARTWORK_SIZE } from './values';
 import { colors } from '../styles/colors';
 import { h, sp, w } from '../styles/size';
 import { AnimationState, usePlayerAnimation } from './hooks/usePlayerAnimation';
@@ -84,12 +84,12 @@ const MusicPlayer = forwardRef<MusicPlayerHandler, MusicPlayerProps>((
         sheetAnimation,
         playerAnimation,
         headerAnimation,
-        headerAlbumAnimation,
+        headerArtworkAnimation,
         bodyHeaderAnimation,
         bodyAnimation,
         bodyContentAnimation,
         toolbarAnimation,
-        bodyAlbumAnimation,
+        bodyArtworkAnimation,
         tracksScrollAnimation,
         tracksScrollWrapperAnimations,
         collapse,
@@ -191,11 +191,11 @@ const MusicPlayer = forwardRef<MusicPlayerHandler, MusicPlayerProps>((
 
                             {/* Tracks Scroll Wrapper */}
                             <Animated.View style={tracksScrollWrapperAnimations}>
-                                {/* Animated Album */}
+                                {/* Animated Artwork */}
                                 <Animated.Image
                                     source={{ uri: currentTrack.artwork }}
                                     resizeMode='cover'
-                                    style={[bodyAlbumAnimation, headerStyles.album]}
+                                    style={[bodyArtworkAnimation, headerStyles.artwork]}
                                 />
 
                                 {/* Tracks Scroll View */}
@@ -222,7 +222,7 @@ const MusicPlayer = forwardRef<MusicPlayerHandler, MusicPlayerProps>((
                         {/* Body */}
                         <Animated.View style={[bodyAnimation, styles.body]}>
                             <Animated.View style={bodyContentAnimation}>
-                                <View style={{ paddingHorizontal: BODY_ALBUM_PADDING_HORIZONTAL }}>
+                                <View style={{ paddingHorizontal: BODY_ARTWORK_PADDING_HORIZONTAL }}>
                                     <Text style={styles.title}>{currentTrack.title}</Text>
                                     <Text style={styles.artist}>{currentTrack.artist}</Text>
                                 </View>
@@ -268,7 +268,7 @@ const MusicPlayer = forwardRef<MusicPlayerHandler, MusicPlayerProps>((
                                 {/* Progress Bar */}
                                 <ProgressBar
                                     height={h(2)}
-                                    width={BODY_ALBUM_SIZE}
+                                    width={BODY_ARTWORK_SIZE}
                                     duration={duration}
                                     buffered={buffered}
                                     position={position}
@@ -297,7 +297,7 @@ const MusicPlayer = forwardRef<MusicPlayerHandler, MusicPlayerProps>((
                             animationState={animationState}
                             playbackState={playbackState}
                             animation={headerAnimation}
-                            albumAnimation={headerAlbumAnimation}
+                            artworkAnimation={headerArtworkAnimation}
                             backgroundColor={headerColor}
                             progress={{
                                 height: h(1),
@@ -340,8 +340,8 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     track: {
-        width: BODY_ALBUM_SIZE,
-        height: BODY_ALBUM_SIZE,
+        width: BODY_ARTWORK_SIZE,
+        height: BODY_ARTWORK_SIZE,
     },
     title: {
         fontSize: sp(24),

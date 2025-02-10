@@ -13,7 +13,7 @@ export const HEADER_HEIGHT = h(74);
 type HeaderProps = {
     track: Track;
     animation: AnimatedStyle;
-    albumAnimation: AnimatedStyle;
+    artworkAnimation: AnimatedStyle;
     animationState: AnimationState;
     playbackState: PlaybackState;
     backgroundColor: string;
@@ -41,7 +41,7 @@ const Header = (props: HeaderProps) => {
                 <Animated.Image
                     source={{ uri: props.track.artworkThumbnail }}
                     resizeMode='cover'
-                    style={[props.albumAnimation, styles.album]}
+                    style={[props.artworkAnimation, styles.artwork]}
                 />
                 <View style={styles.titleWithArtistContainer}>
                     <Text style={styles.title}>{props.track.title}</Text>
@@ -80,7 +80,7 @@ export const styles = StyleSheet.create({
         gap: w(12),
         paddingHorizontal: w(8),
     },
-    album: {
+    artwork: {
         width: w(40),
         height: w(40),
         borderRadius: 4,
