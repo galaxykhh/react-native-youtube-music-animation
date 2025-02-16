@@ -13,6 +13,7 @@ import Capsule from './components/Capsule';
 import Controller from './components/Controller';
 import Toolbar from './components/Toolbar';
 import ProgressBar from './components/ProgressBar';
+import Marquee from './components/Marquee';
 
 export type Track = {
     id: number;
@@ -223,7 +224,9 @@ const MusicPlayer = forwardRef<MusicPlayerHandler, MusicPlayerProps>((
                         <Animated.View style={[bodyAnimation, styles.body]}>
                             <Animated.View style={bodyContentAnimation}>
                                 <View style={{ paddingHorizontal: BODY_ARTWORK_PADDING_HORIZONTAL }}>
-                                    <Text style={styles.title}>{currentTrack.title}</Text>
+                                    <Marquee>
+                                        <Text style={styles.title}>{currentTrack.title}</Text>
+                                    </Marquee>
                                     <Text style={styles.artist}>{currentTrack.artist}</Text>
                                 </View>
 

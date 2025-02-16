@@ -44,7 +44,7 @@ const Header = (props: HeaderProps) => {
                     style={[props.artworkAnimation, styles.artwork]}
                 />
                 <View style={styles.titleWithArtistContainer}>
-                    <Text style={styles.title}>{props.track.title}</Text>
+                    <Text style={styles.title} numberOfLines={1}>{props.track.title}</Text>
                     <Text style={styles.artist}>{props.track.artist}</Text>
                 </View>
                 <View style={styles.controllerContainer}>
