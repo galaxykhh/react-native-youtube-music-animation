@@ -203,6 +203,7 @@ const MusicPlayer = forwardRef<MusicPlayerHandler, MusicPlayerProps>((
                                 <AnimatedFlatList
                                     style={tracksScrollAnimation}
                                     ref={scrollRef}
+                                    scrollEnabled={queue.length >= 2}
                                     data={queue}
                                     renderItem={renderTrack}
                                     keyExtractor={(item, index) => item['id'] + index}
@@ -350,11 +351,13 @@ const styles = StyleSheet.create({
         fontSize: sp(24),
         fontWeight: 700,
         marginBottom: h(4),
+        height: h(30),
         color: colors.textA,
     },
     artist: {
         fontSize: sp(16),
         fontWeight: 400,
+        height: h(20),
         color: colors.textB,
     },
     actionsContainer: {
